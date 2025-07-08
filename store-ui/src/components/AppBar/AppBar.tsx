@@ -1,3 +1,4 @@
+// src/components/AppBar/AppBar.tsx (REPLACE YOUR EXISTING)
 import * as React from 'react';
 import { styled, alpha, useTheme } from '@mui/material/styles';
 import AppBar from '@mui/material/AppBar';
@@ -14,11 +15,17 @@ import SearchIcon from '@mui/icons-material/Search';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import MoreIcon from '@mui/icons-material/MoreVert';
+import LoginIcon from '@mui/icons-material/Login';
+import LogoutIcon from '@mui/icons-material/Logout';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ThemeContext from "../layout/ThemeContext";
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useNavigate } from "react-router-dom";
 import Link from '@mui/material/Link';
+import Button from '@mui/material/Button';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -50,7 +57,6 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   color: 'inherit',
   '& .MuiInputBase-input': {
     padding: theme.spacing(1, 1, 1, 0),
-    // vertical padding + font size from searchIcon
     paddingLeft: `calc(1em + ${theme.spacing(4)})`,
     transition: theme.transitions.create('width'),
     width: '100%',
@@ -62,6 +68,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 export default function PrimarySearchAppBar() {
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout, isAdmin } = useAuth();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] =
@@ -87,38 +94,47 @@ export default function PrimarySearchAppBar() {
     setMobileMoreAnchorEl(event.currentTarget);
   };
 
-  // NEW: Handle cart navigation
   const handleCartClick = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
     navigate('/cart');
   };
 
-  // NEW: Handle search functionality (updated for Elasticsearch)
   const handleSearchSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     const formData = new FormData(event.target as HTMLFormElement);
     const searchQuery = formData.get('search') as string;
     if (searchQuery && searchQuery.trim()) {
-      // Navigate to search results with the query
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
-  // NEW: Handle profile navigation
   const handleProfileClick = () => {
     navigate('/profile');
     handleMenuClose();
   };
 
-  // NEW: Handle register navigation  
   const handleRegisterClick = () => {
     navigate('/register');
     handleMenuClose();
   };
 
-  // NEW: Handle users management navigation
+  const handleLoginClick = () => {
+    navigate('/login');
+    handleMenuClose();
+  };
+
   const handleUsersClick = () => {
     navigate('/users');
     handleMenuClose();
+  };
+
+  const handleLogout = () => {
+    logout();
+    handleMenuClose();
+    navigate('/');
   };
 
   const menuId = 'primary-search-account-menu';
@@ -138,9 +154,42 @@ export default function PrimarySearchAppBar() {
       open={isMenuOpen}
       onClose={handleMenuClose}
     >
-      <MenuItem onClick={handleProfileClick}>My Profile</MenuItem>
-      <MenuItem onClick={handleRegisterClick}>Create Account</MenuItem>
-      <MenuItem onClick={handleUsersClick}>Manage Users</MenuItem>
+      {isAuthenticated ? (
+        // Authenticated user menu
+        [
+          <MenuItem key="welcome" disabled>
+            <Typography variant="body2" color="text.secondary">
+              Welcome, {user?.name}
+            </Typography>
+          </MenuItem>,
+          <MenuItem key="profile" onClick={handleProfileClick}>
+            <AccountCircle sx={{ mr: 1 }} />
+            My Profile
+          </MenuItem>,
+          isAdmin && (
+            <MenuItem key="users" onClick={handleUsersClick}>
+              <AdminPanelSettingsIcon sx={{ mr: 1 }} />
+              Manage Users
+            </MenuItem>
+          ),
+          <MenuItem key="logout" onClick={handleLogout}>
+            <LogoutIcon sx={{ mr: 1 }} />
+            Logout
+          </MenuItem>,
+        ]
+      ) : (
+        // Guest user menu
+        [
+          <MenuItem key="login" onClick={handleLoginClick}>
+            <LoginIcon sx={{ mr: 1 }} />
+            Sign In
+          </MenuItem>,
+          <MenuItem key="register" onClick={handleRegisterClick}>
+            <PersonAddIcon sx={{ mr: 1 }} />
+            Create Account
+          </MenuItem>,
+        ]
+      )}
     </Menu>
   );
 
@@ -181,14 +230,14 @@ export default function PrimarySearchAppBar() {
       <MenuItem onClick={handleCartClick}>
         <IconButton
           size="large"
-          aria-label="1 item in your shopping cart"
+          aria-label="shopping cart"
           color="inherit"
         >
           <Badge badgeContent={1} color="error">
             <ShoppingCartIcon />
           </Badge>
         </IconButton>
-        <Typography>Cart</Typography>
+        <Typography>Cart {!isAuthenticated && '(Login Required)'}</Typography>
       </MenuItem>
       <MenuItem onClick={handleProfileMenuOpen}>
         <IconButton
@@ -200,7 +249,7 @@ export default function PrimarySearchAppBar() {
         >
           <AccountCircle />
         </IconButton>
-        <Typography>Profile</Typography>
+        <Typography>{isAuthenticated ? 'Profile' : 'Account'}</Typography>
       </MenuItem>
     </Menu>
   );
@@ -242,6 +291,22 @@ export default function PrimarySearchAppBar() {
           <Box sx={{ flexGrow: 1 }} />
           {renderThemeToggle}
           <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+            {/* Desktop: Show auth status */}
+            {isAuthenticated ? (
+              <Typography variant="body2" sx={{ mr: 2, alignSelf: 'center' }}>
+                Welcome, {user?.name}
+              </Typography>
+            ) : (
+              <Button 
+                color="inherit" 
+                onClick={handleLoginClick}
+                startIcon={<LoginIcon />}
+                sx={{ mr: 1 }}
+              >
+                Login
+              </Button>
+            )}
+            
             <IconButton
               size="large"
               edge="end"
@@ -255,9 +320,10 @@ export default function PrimarySearchAppBar() {
             </IconButton>
             <IconButton
               size="large"
-              aria-label="1 item in your shopping cart"
+              aria-label="shopping cart"
               color="inherit"
               onClick={handleCartClick}
+              title={!isAuthenticated ? 'Login required for cart' : 'View cart'}
             >
               <Badge badgeContent={1} color="error">
                 <ShoppingCartIcon />

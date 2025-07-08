@@ -1,27 +1,50 @@
 import React, { useState } from 'react';
 import {
-  Box, Paper, Typography, TextField, Button, Alert, 
-  CircularProgress, Grid, Link as MuiLink, Avatar,
-  FormControl, InputLabel, Select, MenuItem, SelectChangeEvent
+  Box, Paper, Typography, TextField, Button, Alert,
+  CircularProgress, Grid, Link as MuiLink, Avatar
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate } from 'react-router-dom';
-import { createUser, CreateUserRequest } from '../../api/users';
+
+// Updated API interface for authentication
+interface RegisterRequest {
+  name: string;
+  email: string;
+  mobile: string;
+  password: string;
+}
+
+// Updated API call for authentication registration
+const registerUser = async (userData: RegisterRequest) => {
+  const response = await fetch('http://localhost:9090/auth/register', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(userData),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Registration failed');
+  }
+
+  return response.json();
+};
 
 const Register = () => {
   const navigate = useNavigate();
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     mobile: '',
-    role: 'user'  // Default to regular user
+    password: '',
+    confirmPassword: ''
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,44 +55,47 @@ const Register = () => {
     }));
   };
 
-  const handleRoleChange = (e: SelectChangeEvent) => {
-    setFormData(prev => ({
-      ...prev,
-      role: e.target.value
-    }));
-  };
-
   const validateForm = () => {
     if (!formData.name.trim()) {
       setError('Please enter your full name.');
       return false;
     }
-    
+
     if (!formData.email.trim()) {
       setError('Please enter your email address.');
       return false;
     }
-    
+
     if (!formData.email.includes('@') || !formData.email.includes('.')) {
       setError('Please enter a valid email address.');
       return false;
     }
-    
+
     if (!formData.mobile.trim()) {
       setError('Please enter your mobile number.');
       return false;
     }
-    
+
     if (formData.mobile.length < 8) {
       setError('Please enter a valid mobile number (at least 8 digits).');
       return false;
     }
 
-    if (!formData.role || !['user', 'admin'].includes(formData.role)) {
-      setError('Please select a valid role.');
+    if (!formData.password.trim()) {
+      setError('Please enter a password.');
       return false;
     }
-    
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
+      return false;
+    }
+
     return true;
   };
 
@@ -85,30 +111,28 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const userData: CreateUserRequest = {
+      const userData: RegisterRequest = {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         mobile: formData.mobile.trim(),
-        role: formData.role
+        password: formData.password
       };
 
       console.log('Creating user with data:', userData);
-      const newUser = await createUser(userData);
-      
+      const newUser = await registerUser(userData);
+
       if (newUser) {
-        setSuccess(`Account created successfully! Welcome, ${newUser.name}! Your user ID is ${newUser.id} and role is ${newUser.role}.`);
-        setFormData({ name: '', email: '', mobile: '', role: 'user' });
-        
-        // Redirect to profile after 3 seconds
+        setSuccess(`Account created successfully! Welcome, ${newUser.name}!`);
+        setFormData({ name: '', email: '', mobile: '', password: '', confirmPassword: '' });
+
+        // Redirect to login after 2 seconds
         setTimeout(() => {
-          navigate('/users');  // Go to user management to see the new user
-        }, 3000);
-      } else {
-        setError('Failed to create account. Please try again or check if the email already exists.');
+          navigate('/login');
+        }, 2000);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Registration error:', err);
-      setError('Error creating account. Please ensure the User microservice is running on port 9090.');
+      setError(err.message || 'Error creating account. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -134,13 +158,13 @@ const Register = () => {
             {error}
           </Alert>
         )}
-        
+
         {success && (
           <Alert severity="success" sx={{ mb: 3 }}>
             {success}
             <br />
             <Typography variant="body2" sx={{ mt: 1 }}>
-              Redirecting to user management page in 3 seconds...
+              Redirecting to login page...
             </Typography>
           </Alert>
         )}
@@ -160,7 +184,7 @@ const Register = () => {
                 disabled={loading}
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -176,7 +200,7 @@ const Register = () => {
                 helperText="We'll use this to identify your account"
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -193,40 +217,34 @@ const Register = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <FormControl fullWidth required>
-                <InputLabel id="role-label">User Role</InputLabel>
-                <Select
-                  labelId="role-label"
-                  id="role"
-                  value={formData.role}
-                  label="User Role"
-                  onChange={handleRoleChange}
-                  disabled={loading}
-                >
-                  <MenuItem value="user">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PersonIcon color="primary" />
-                      <Box>
-                        <Typography variant="body1">Regular User</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Can shop and manage personal account
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </MenuItem>
-                  <MenuItem value="admin">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <AdminPanelSettingsIcon color="warning" />
-                      <Box>
-                        <Typography variant="body1">Administrator</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Can manage users and system settings
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                label="Password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+                variant="outlined"
+                placeholder="Enter your password"
+                disabled={loading}
+                helperText="Must be at least 6 characters long"
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Confirm Password"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                required
+                variant="outlined"
+                placeholder="Confirm your password"
+                disabled={loading}
+              />
             </Grid>
           </Grid>
 
@@ -239,35 +257,29 @@ const Register = () => {
               startIcon={loading ? <CircularProgress size={20} /> : <PersonAddIcon />}
               sx={{ minWidth: 200, mb: 2 }}
             >
-              {loading ? 'Creating Account...' : `Create ${formData.role === 'admin' ? 'Admin' : 'User'} Account`}
+              {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
-            
-            {formData.role === 'admin' && (
-              <Typography variant="caption" color="warning.main" display="block" sx={{ mt: 1 }}>
-                ⚠️ Admin accounts have elevated privileges
-              </Typography>
-            )}
           </Box>
         </form>
 
         <Box sx={{ mt: 3, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-            Want to view existing users?{' '}
-            <MuiLink 
-              component="button" 
-              variant="body2" 
-              onClick={() => navigate('/users')}
+            Already have an account?{' '}
+            <MuiLink
+              component="button"
+              variant="body2"
+              onClick={() => navigate('/login')}
               sx={{ textDecoration: 'underline', cursor: 'pointer' }}
             >
-              User Management
+              Sign In
             </MuiLink>
           </Typography>
-          
+
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             Want to browse first?{' '}
-            <MuiLink 
-              component="button" 
-              variant="body2" 
+            <MuiLink
+              component="button"
+              variant="body2"
               onClick={() => navigate('/')}
               sx={{ textDecoration: 'underline', cursor: 'pointer' }}
             >
