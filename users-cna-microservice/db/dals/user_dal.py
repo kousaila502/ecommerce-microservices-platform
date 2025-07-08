@@ -141,3 +141,92 @@ class UserDAL:
         q = update(User).where(User.id == user_id).values(**update_data)
         await self.db_session.execute(q)
         return await self.get_user(str(user_id))
+    
+     # Password Reset Methods
+    async def set_password_reset_token(self, user_id: int, reset_token: str, expires_at: datetime) -> User:
+        """Set password reset token for user"""
+        q = update(User).where(User.id == user_id).values(
+            reset_token=reset_token,
+            reset_token_expires=expires_at,
+            updated_at=datetime.utcnow()
+        )
+        await self.db_session.execute(q)
+        return await self.get_user(str(user_id))
+
+    async def get_user_by_reset_token(self, reset_token: str) -> Optional[User]:
+        """Get user by password reset token"""
+        q = await self.db_session.execute(
+            select(User).where(User.reset_token == reset_token)
+        )
+        return q.scalar()
+
+    async def clear_password_reset_token(self, user_id: int) -> User:
+        """Clear password reset token after successful reset"""
+        q = update(User).where(User.id == user_id).values(
+            reset_token=None,
+            reset_token_expires=None,
+            updated_at=datetime.utcnow()
+        )
+        await self.db_session.execute(q)
+        return await self.get_user(str(user_id))
+
+    async def update_password_with_reset(self, user_id: int, new_password: str) -> User:
+        """Update user password and clear reset token"""
+        hashed_password = hash_password(new_password)
+        q = update(User).where(User.id == user_id).values(
+            password=hashed_password,
+            reset_token=None,
+            reset_token_expires=None,
+            updated_at=datetime.utcnow()
+        )
+        await self.db_session.execute(q)
+        return await self.get_user(str(user_id))
+    
+     # Email Verification Methods
+    async def set_email_verification_token(self, user_id: int, verification_token: str, expires_at: datetime) -> User:
+        """Set email verification token for user"""
+        q = update(User).where(User.id == user_id).values(
+            email_verification_token=verification_token,
+            email_verification_expires=expires_at,
+            verification_sent_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        await self.db_session.execute(q)
+        return await self.get_user(str(user_id))
+
+    async def get_user_by_verification_token(self, verification_token: str) -> Optional[User]:
+        """Get user by email verification token"""
+        q = await self.db_session.execute(
+            select(User).where(User.email_verification_token == verification_token)
+        )
+        return q.scalar()
+
+    async def verify_user_email(self, user_id: int) -> User:
+        """Mark user email as verified and clear verification token"""
+        q = update(User).where(User.id == user_id).values(
+            is_email_verified=True,
+            email_verification_token=None,
+            email_verification_expires=None,
+            updated_at=datetime.utcnow()
+        )
+        await self.db_session.execute(q)
+        return await self.get_user(str(user_id))
+
+    async def clear_email_verification_token(self, user_id: int) -> User:
+        """Clear email verification token (for expired tokens)"""
+        q = update(User).where(User.id == user_id).values(
+            email_verification_token=None,
+            email_verification_expires=None,
+            updated_at=datetime.utcnow()
+        )
+        await self.db_session.execute(q)
+        return await self.get_user(str(user_id))
+
+    async def can_resend_verification(self, user_id: int, cooldown_minutes: int = 5) -> bool:
+        """Check if user can resend verification email (rate limiting)"""
+        user = await self.get_user(str(user_id))
+        if not user or not user.verification_sent_at:
+            return True
+        
+        time_since_last_send = datetime.utcnow() - user.verification_sent_at
+        return time_since_last_send.total_seconds() > (cooldown_minutes * 60)

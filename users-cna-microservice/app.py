@@ -1,73 +1,71 @@
-# app.py (REPLACE EXISTING)
+# app.py - Fixed with all routers included
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 
-from db.config import engine, Base
-from routers import user_router, auth_router, admin_router
+# Import your existing routers (FIXED - UNCOMMENTED)
+from routers.auth_router import router as auth_router
+from routers.admin_router import router as admin_router
+from routers.user_router import router as user_router
+
+# Import the new routers
+from routers.password_reset import router as password_reset_router
+from routers.email_verification import router as email_verification_router
 
 app = FastAPI(
-    title="Users Microservice with Enhanced Authentication", 
-    version="2.0.0",
-    description="User management with JWT authentication, role-based access control, and admin features"
+    title="E-Commerce User Service",
+    description="User management with authentication, password reset, and email verification",
+    version="2.2.0"
 )
 
-# Add CORS middleware
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React app URL
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Include all routers
-app.include_router(auth_router.router)
-app.include_router(user_router.router)
-app.include_router(admin_router.router)  # NEW: Admin endpoints
+# Include your existing routers (FIXED - UNCOMMENTED)
+app.include_router(auth_router)
+app.include_router(admin_router)
+app.include_router(user_router)
 
-@app.get("/")
-async def root():
-    return {
-        "message": "Users Microservice with Enhanced Authentication",
-        "version": "2.0.0",
-        "features": [
-            "JWT Authentication",
-            "User Registration & Login",
-            "Role-based Access Control",
-            "User Blocking & Suspension",
-            "Session Management",
-            "Admin Dashboard",
-            "Password Strength Validation",
-            "Audit Logging"
-        ]
-    }
+# Include the new routers
+app.include_router(password_reset_router)
+app.include_router(email_verification_router)
 
+# Health check endpoint
 @app.get("/health")
 async def health_check():
     return {
         "status": "healthy",
-        "service": "users-microservice",
-        "version": "2.0.0"
+        "service": "user-service",
+        "version": "2.2.0",
+        "features": [
+            "authentication",
+            "user-management", 
+            "admin-dashboard",
+            "password-reset",
+            "email-verification"
+        ]
     }
 
-@app.on_event("startup")
-async def startup():
-    # Create db tables if they don't exist
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    
-    print("✅ Database tables created (if they didn't exist).")
-    print("🚀 Enhanced Users Microservice ready!")
-    print("📋 Available features:")
-    print("   - JWT Authentication")
-    print("   - User Blocking/Suspension") 
-    print("   - Session Tracking")
-    print("   - Admin Management")
-    print("   - Password Validation")
-    print("🌐 CORS enabled for http://localhost:3000")
-    print("📖 API docs: http://localhost:9090/docs")
-        
+@app.get("/")
+async def root():
+    return {
+        "message": "E-Commerce User Service with Authentication, Password Reset & Email Verification",
+        "docs": "/docs",
+        "endpoints": {
+            "auth": "/auth/*",
+            "admin": "/admin/*",
+            "user": "/user/*", 
+            "password_reset": "/auth/forgot-password, /auth/reset-password",
+            "email_verification": "/auth/verify-email, /auth/resend-verification"
+        }
+    }
 
-if __name__ == '__main__':
-    uvicorn.run("app:app", port=9090, host='127.0.0.1', reload=True)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=9090)

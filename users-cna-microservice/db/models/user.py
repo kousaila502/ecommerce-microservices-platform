@@ -20,7 +20,7 @@ class User(Base):
     role = Column(String, nullable=False, default='user')
     password = Column(String, nullable=False)
     
-    # New status fields
+    # Status fields
     status = Column(String, nullable=False, default=UserStatus.ACTIVE)
     is_email_verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -31,6 +31,15 @@ class User(Base):
     blocked_at = Column(DateTime, nullable=True)
     blocked_by = Column(Integer, nullable=True)
     blocked_reason = Column(Text, nullable=True)
+    
+    # Password reset fields
+    reset_token = Column(String(255), nullable=True)
+    reset_token_expires = Column(DateTime, nullable=True)
+    
+    # Email verification fields (NEW)
+    email_verification_token = Column(String(255), nullable=True)
+    email_verification_expires = Column(DateTime, nullable=True)
+    verification_sent_at = Column(DateTime, nullable=True)
     
     def to_dict(self):
         return {
@@ -53,7 +62,7 @@ class User(Base):
     def is_blocked(self):
         return self.status in [UserStatus.BLOCKED, UserStatus.SUSPENDED]
 
-# New User Session Model
+# User Session Model (unchanged)
 class UserSession(Base):
     __tablename__ = 'user_sessions'
     
