@@ -1,5 +1,9 @@
 spring:
   redis:
-    host: ${SPRING_REDIS_HOST}
-    port: ${SPRING_REDIS_PORT}
-    password: ${SPRING_REDIS_PASSWORD}
+    host: ${SPRING_REDIS_HOST:localhost}
+    port: ${SPRING_REDIS_PORT:6379}
+    password: ${SPRING_REDIS_PASSWORD:password123}
+
+# The syntax ${VAR:default} means:
+# - Use environment variable VAR if it exists
+# - Otherwise use the default value after the colon

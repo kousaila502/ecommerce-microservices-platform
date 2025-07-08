@@ -61,7 +61,6 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 export default function PrimarySearchAppBar() {
-
   const navigate = useNavigate();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -88,6 +87,40 @@ export default function PrimarySearchAppBar() {
     setMobileMoreAnchorEl(event.currentTarget);
   };
 
+  // NEW: Handle cart navigation
+  const handleCartClick = () => {
+    navigate('/cart');
+  };
+
+  // NEW: Handle search functionality (updated for Elasticsearch)
+  const handleSearchSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const formData = new FormData(event.target as HTMLFormElement);
+    const searchQuery = formData.get('search') as string;
+    if (searchQuery && searchQuery.trim()) {
+      // Navigate to search results with the query
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // NEW: Handle profile navigation
+  const handleProfileClick = () => {
+    navigate('/profile');
+    handleMenuClose();
+  };
+
+  // NEW: Handle register navigation  
+  const handleRegisterClick = () => {
+    navigate('/register');
+    handleMenuClose();
+  };
+
+  // NEW: Handle users management navigation
+  const handleUsersClick = () => {
+    navigate('/users');
+    handleMenuClose();
+  };
+
   const menuId = 'primary-search-account-menu';
   const renderMenu = (
     <Menu
@@ -105,8 +138,9 @@ export default function PrimarySearchAppBar() {
       open={isMenuOpen}
       onClose={handleMenuClose}
     >
-      <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-      <MenuItem onClick={handleMenuClose}>My account</MenuItem>
+      <MenuItem onClick={handleProfileClick}>My Profile</MenuItem>
+      <MenuItem onClick={handleRegisterClick}>Create Account</MenuItem>
+      <MenuItem onClick={handleUsersClick}>Manage Users</MenuItem>
     </Menu>
   );
 
@@ -144,17 +178,17 @@ export default function PrimarySearchAppBar() {
       open={isMobileMenuOpen}
       onClose={handleMobileMenuClose}
     >
-      <MenuItem>
+      <MenuItem onClick={handleCartClick}>
         <IconButton
           size="large"
-          aria-label="show 17 new notifications"
+          aria-label="1 item in your shopping cart"
           color="inherit"
         >
-          <Badge badgeContent={17} color="error">
+          <Badge badgeContent={1} color="error">
             <ShoppingCartIcon />
           </Badge>
         </IconButton>
-        <Typography>Notifications</Typography>
+        <Typography>Cart</Typography>
       </MenuItem>
       <MenuItem onClick={handleProfileMenuOpen}>
         <IconButton
@@ -183,7 +217,6 @@ export default function PrimarySearchAppBar() {
             sx={{ mr: 2 }}
           >
             <MenuIcon />
-
           </IconButton>
           <Link href="/" variant="h5" underline="none"
             noWrap
@@ -193,15 +226,18 @@ export default function PrimarySearchAppBar() {
           </Link>
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ width: '45%' }}>
-            <Search>
-              <SearchIconWrapper>
-                <SearchIcon />
-              </SearchIconWrapper>
-              <StyledInputBase
-                placeholder="Search for products ..."
-                inputProps={{ 'aria-label': 'search' }}
-              />
-            </Search>
+            <form onSubmit={handleSearchSubmit}>
+              <Search>
+                <SearchIconWrapper>
+                  <SearchIcon />
+                </SearchIconWrapper>
+                <StyledInputBase
+                  name="search"
+                  placeholder="Search for products ..."
+                  inputProps={{ 'aria-label': 'search' }}
+                />
+              </Search>
+            </form>
           </Box>
           <Box sx={{ flexGrow: 1 }} />
           {renderThemeToggle}
@@ -221,6 +257,7 @@ export default function PrimarySearchAppBar() {
               size="large"
               aria-label="1 item in your shopping cart"
               color="inherit"
+              onClick={handleCartClick}
             >
               <Badge badgeContent={1} color="error">
                 <ShoppingCartIcon />
@@ -243,6 +280,6 @@ export default function PrimarySearchAppBar() {
       </AppBar>
       {renderMobileMenu}
       {renderMenu}
-    </Box >
+    </Box>
   );
 }

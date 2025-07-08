@@ -1,31 +1,35 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from db.config import engine, Base
 from routers import user_router
-from fastapi import Depends
-from db.config import async_session
-from db.models.user import User
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # React app URL
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
 app.include_router(user_router.router)
 
 
 @app.on_event("startup")
 async def startup():
-    # create db tables
+    # Only create db tables if they don't exist
+    # No automatic user creation
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)    
+        await conn.run_sync(Base.metadata.create_all)
     
-    async with async_session() as session:
-        async with session.begin():
-            session.add_all([
-                User(name = 'Peter', email = 'peter@exmaple.com', mobile='298479284'),
-                User(name = 'John', email = 'john@exmaple.com', mobile='998479284'),
-                User(name = 'Jason', email = 'jason@exmaple.com', mobile='928479285')]
-            )
-        await session.commit()
+    print("Database tables created (if they didn't exist).")
+    print("User microservice ready. No automatic users created.")
+    print("Users will only be created through API requests.")
+    print("CORS enabled for http://localhost:3000")
         
 
 if __name__ == '__main__':

@@ -7,10 +7,13 @@ axiosClient.defaults.headers.common = {
   'Accept': 'application/json'
 }
 
-//All request will wait 2 seconds before timeout
-axiosClient.defaults.timeout = 2000;
+// All request will wait 10 seconds before timeout (increased from 2 seconds)
+axiosClient.defaults.timeout = 10000;
 
-export const productsUrl = process.env.REACT_APP_PRODCUTS_URL_BASE
-export const cartUrl = process.env.REACT_APP_CART_URL_BASE
+// API URLs for all microservices
+export const productsUrl = process.env.REACT_APP_PRODUCTS_URL_BASE || 'http://localhost:3001/'
+export const cartUrl = process.env.REACT_APP_CART_URL_BASE || 'http://localhost:8080/'
+export const searchUrl = process.env.REACT_APP_SEARCH_URL_BASE || 'http://localhost:4000/'
+export const usersUrl = process.env.REACT_APP_USERS_URL_BASE || 'http://localhost:9090/'
 
 export default axiosClient
