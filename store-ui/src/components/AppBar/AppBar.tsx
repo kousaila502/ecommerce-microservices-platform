@@ -138,6 +138,7 @@ export default function PrimarySearchAppBar() {
   };
 
   const menuId = 'primary-search-account-menu';
+  
   const renderMenu = (
     <Menu
       anchorEl={anchorEl}
@@ -162,14 +163,20 @@ export default function PrimarySearchAppBar() {
               Welcome, {user?.name}
             </Typography>
           </MenuItem>,
-          <MenuItem key="profile" onClick={handleProfileClick}>
+          <MenuItem key="profile" onClick={() => { navigate('/profile'); handleMenuClose(); }}>
             <AccountCircle sx={{ mr: 1 }} />
             My Profile
           </MenuItem>,
           isAdmin && (
-            <MenuItem key="users" onClick={handleUsersClick}>
+            <MenuItem key="admin-dashboard" onClick={() => { navigate('/admin'); handleMenuClose(); }}>
               <AdminPanelSettingsIcon sx={{ mr: 1 }} />
-              Manage Users
+              Admin Dashboard
+            </MenuItem>
+          ),
+          isAdmin && (
+            <MenuItem key="users" onClick={() => { navigate('/users'); handleMenuClose(); }}>
+              <AdminPanelSettingsIcon sx={{ mr: 1 }} />
+              User Management (Legacy)
             </MenuItem>
           ),
           <MenuItem key="logout" onClick={handleLogout}>
