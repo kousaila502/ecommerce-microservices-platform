@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from db.config import engine, Base
-from routers import user_router
+from routers import user_router, auth_router  # ADD auth_router import
 
-app = FastAPI()
+app = FastAPI(title="Users Microservice with Authentication", version="1.0.0")  # Add title
 
 # Add CORS middleware
 app.add_middleware(
@@ -16,8 +16,17 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
+# Include both routers
+app.include_router(auth_router.router)  # ADD this line
 app.include_router(user_router.router)
 
+@app.get("/")  # ADD this endpoint
+async def root():
+    return {"message": "Users Microservice with Authentication"}
+
+@app.get("/health")  # ADD this endpoint
+async def health_check():
+    return {"status": "healthy"}
 
 @app.on_event("startup")
 async def startup():
@@ -27,8 +36,7 @@ async def startup():
         await conn.run_sync(Base.metadata.create_all)
     
     print("Database tables created (if they didn't exist).")
-    print("User microservice ready. No automatic users created.")
-    print("Users will only be created through API requests.")
+    print("User microservice with authentication ready.")
     print("CORS enabled for http://localhost:3000")
         
 
