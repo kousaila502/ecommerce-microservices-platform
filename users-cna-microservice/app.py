@@ -1,11 +1,16 @@
+# app.py (REPLACE EXISTING)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from db.config import engine, Base
-from routers import user_router, auth_router  # ADD auth_router import
+from routers import user_router, auth_router, admin_router
 
-app = FastAPI(title="Users Microservice with Authentication", version="1.0.0")  # Add title
+app = FastAPI(
+    title="Users Microservice with Enhanced Authentication", 
+    version="2.0.0",
+    description="User management with JWT authentication, role-based access control, and admin features"
+)
 
 # Add CORS middleware
 app.add_middleware(
@@ -16,28 +21,52 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-# Include both routers
-app.include_router(auth_router.router)  # ADD this line
+# Include all routers
+app.include_router(auth_router.router)
 app.include_router(user_router.router)
+app.include_router(admin_router.router)  # NEW: Admin endpoints
 
-@app.get("/")  # ADD this endpoint
+@app.get("/")
 async def root():
-    return {"message": "Users Microservice with Authentication"}
+    return {
+        "message": "Users Microservice with Enhanced Authentication",
+        "version": "2.0.0",
+        "features": [
+            "JWT Authentication",
+            "User Registration & Login",
+            "Role-based Access Control",
+            "User Blocking & Suspension",
+            "Session Management",
+            "Admin Dashboard",
+            "Password Strength Validation",
+            "Audit Logging"
+        ]
+    }
 
-@app.get("/health")  # ADD this endpoint
+@app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {
+        "status": "healthy",
+        "service": "users-microservice",
+        "version": "2.0.0"
+    }
 
 @app.on_event("startup")
 async def startup():
-    # Only create db tables if they don't exist
-    # No automatic user creation
+    # Create db tables if they don't exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
-    print("Database tables created (if they didn't exist).")
-    print("User microservice with authentication ready.")
-    print("CORS enabled for http://localhost:3000")
+    print("✅ Database tables created (if they didn't exist).")
+    print("🚀 Enhanced Users Microservice ready!")
+    print("📋 Available features:")
+    print("   - JWT Authentication")
+    print("   - User Blocking/Suspension") 
+    print("   - Session Tracking")
+    print("   - Admin Management")
+    print("   - Password Validation")
+    print("🌐 CORS enabled for http://localhost:3000")
+    print("📖 API docs: http://localhost:9090/docs")
         
 
 if __name__ == '__main__':
