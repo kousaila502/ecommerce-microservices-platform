@@ -12,8 +12,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Getter
 public class Cart {
-    private String customerId;
+    private Long userId;  // Changed from customerId to userId
     private List<CartItem> items;
     private float total;
     private String currency;
+    
+    // Helper method to generate Redis key
+    public String getRedisKey() {
+        return "cart:" + userId;
+    }
 }
