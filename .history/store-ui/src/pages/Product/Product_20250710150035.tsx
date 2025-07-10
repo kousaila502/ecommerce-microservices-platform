@@ -54,7 +54,6 @@ const ProductPage = () => {
     };
 
     try {
-      if (!user || !token) return;
       const result = await addToCart(user.id, item, token);
       if (result) {
         navigate('/cart');

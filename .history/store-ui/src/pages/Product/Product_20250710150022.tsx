@@ -24,6 +24,7 @@ import TextField from '@mui/material/TextField';
 const ProductPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { user, token } = useAuth();
 
   const [product, setProduct] = React.useState<Product | null>(null);
@@ -54,7 +55,6 @@ const ProductPage = () => {
     };
 
     try {
-      if (!user || !token) return;
       const result = await addToCart(user.id, item, token);
       if (result) {
         navigate('/cart');

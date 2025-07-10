@@ -15,6 +15,6 @@ export const productsUrl = process.env.REACT_APP_PRODUCTS_URL_BASE || 'http://lo
 export const cartUrl = process.env.REACT_APP_CART_URL_BASE || 'http://localhost:8080/'
 export const searchUrl = process.env.REACT_APP_SEARCH_URL_BASE || 'http://localhost:4000/'
 export const usersUrl = process.env.REACT_APP_USERS_URL_BASE || 'http://localhost:9090/'
-export const ordersUrl = process.env.REACT_APP_ORDERS_URL_BASE || 'http://localhost:8081/'
+
 
 export default axiosClient

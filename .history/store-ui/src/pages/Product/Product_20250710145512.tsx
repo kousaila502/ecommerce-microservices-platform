@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getProductById, Product } from "../../api/products";
 import { addToCart, AddToCartPayload } from "../../api/cart";
 import { useAuth } from "../../contexts/AuthContext";
+const { user, token } = useAuth();
 
 // MUI
 import Paper from '@mui/material/Paper';
@@ -24,7 +25,7 @@ import TextField from '@mui/material/TextField';
 const ProductPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
 
   const [product, setProduct] = React.useState<Product | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -54,8 +55,7 @@ const ProductPage = () => {
     };
 
     try {
-      if (!user || !token) return;
-      const result = await addToCart(user.id, item, token);
+      const result = await addToCart(user.id, item, user.token);
       if (result) {
         navigate('/cart');
       } else {
