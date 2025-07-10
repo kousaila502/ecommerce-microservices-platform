@@ -1,11 +1,36 @@
-// src/pages/Profile/Profile.tsx - REPLACE YOUR EXISTING FILE WITH THIS CODE
+// src/pages/Profile/Profile.tsx (ENHANCED VERSION)
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Paper, Typography, TextField, Button, Alert, 
-  CircularProgress, Grid, Divider, Avatar, Chip
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Alert,
+  CircularProgress,
+  Grid,
+  Divider,
+  Avatar,
+  Chip,
+  Card,
+  CardContent,
+  IconButton,
+  Container,
+  Fade,
+  Slide,
 } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import {
+  Person as PersonIcon,
+  AdminPanelSettings as AdminIcon,
+  Edit as EditIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+  Home as HomeIcon,
+  ShoppingCart as OrdersIcon,
+  Security as SecurityIcon,
+  Logout as LogoutIcon,
+  Camera as CameraIcon,
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -15,28 +40,9 @@ interface UpdateUserRequest {
   mobile?: string;
 }
 
-// Updated API call to use authentication
-const updateUserProfile = async (userData: UpdateUserRequest, token: string) => {
-  const response = await fetch(`http://localhost:9090/users/${userData}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify(userData),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Failed to update profile');
-  }
-
-  return response.json();
-};
-
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, isAdmin } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -80,7 +86,6 @@ const Profile = () => {
     setEditing(false);
     setError('');
     setSuccess('');
-    // Reset form data to original user data
     if (user) {
       setFormData({
         name: user.name,
@@ -145,8 +150,7 @@ const Profile = () => {
         return;
       }
 
-      // Note: For now, we'll show success message since the backend update endpoint 
-      // might need to be implemented. The user data is already current from auth context.
+      // Simulate API call success
       setSuccess('Profile updated successfully!');
       setEditing(false);
 
@@ -161,188 +165,329 @@ const Profile = () => {
     }
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
+  const formatJoinDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   // Show loading if no user data yet
   if (!user) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
-        <CircularProgress />
+      <Container maxWidth="md" sx={{ py: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress size={60} />
         <Typography sx={{ ml: 2 }}>Loading profile...</Typography>
-      </Box>
+      </Container>
     );
   }
 
   return (
-    <Box sx={{ p: 2, maxWidth: 800, mx: 'auto' }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <Avatar sx={{ bgcolor: user.role === 'admin' ? 'warning.main' : 'primary.main', mr: 2, width: 60, height: 60 }}>
-            {user.role === 'admin' ? <AdminPanelSettingsIcon fontSize="large" /> : <PersonIcon fontSize="large" />}
-          </Avatar>
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h4" gutterBottom>
-              My Profile
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
-              Manage your account information
-            </Typography>
-          </Box>
-          <Chip 
-            label={user.role === 'admin' ? 'Administrator' : 'User'} 
-            color={user.role === 'admin' ? 'warning' : 'primary'}
-            variant="outlined"
-          />
-        </Box>
-
-        <Divider sx={{ mb: 3 }} />
-
-        {/* Alerts */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {success}
-          </Alert>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSave}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Full Name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                variant={editing ? 'outlined' : 'filled'}
-                disabled={!editing}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Email Address"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                variant={editing ? 'outlined' : 'filled'}
-                disabled={!editing}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Mobile Number"
-                name="mobile"
-                value={formData.mobile}
-                onChange={handleInputChange}
-                required
-                variant={editing ? 'outlined' : 'filled'}
-                disabled={!editing}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="User ID"
-                value={user.id}
-                disabled
-                variant="filled"
-                helperText="This is your unique user identifier"
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Account Type"
-                value={user.role === 'admin' ? 'Administrator' : 'Regular User'}
-                disabled
-                variant="filled"
-                helperText={user.role === 'admin' ? 'You have administrative privileges' : 'Standard user account'}
-              />
-            </Grid>
-          </Grid>
-
-          <Box sx={{ mt: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            {editing ? (
-              <>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={saving}
-                  startIcon={saving ? <CircularProgress size={20} /> : null}
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={handleCancel}
-                  disabled={saving}
-                >
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="contained"
-                onClick={handleEdit}
-              >
-                Edit Profile
-              </Button>
-            )}
-            
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/')}
-            >
-              Back to Home
-            </Button>
-
-            {user.role === 'admin' && (
-              <Button
-                variant="outlined"
-                color="warning"
-                onClick={() => navigate('/users')}
-              >
-                Manage Users
-              </Button>
-            )}
-          </Box>
-        </form>
-
-        {/* Account Actions */}
-        <Divider sx={{ my: 3 }} />
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Account Actions
-          </Typography>
-          <Button
-            variant="text"
-            color="error"
-            onClick={() => {
-              if (window.confirm('Are you sure you want to logout?')) {
-                logout();
-                navigate('/');
-              }
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Fade in timeout={600}>
+        <Box>
+          {/* Profile Header */}
+          <Paper
+            elevation={2}
+            sx={{
+              p: 4,
+              mb: 3,
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
-            Logout
-          </Button>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Box sx={{ position: 'relative' }}>
+                <Avatar
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    fontSize: '2rem',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {getInitials(user.name)}
+                </Avatar>
+                <IconButton
+                  sx={{
+                    position: 'absolute',
+                    bottom: -5,
+                    right: -5,
+                    bgcolor: 'rgba(255,255,255,0.9)',
+                    color: 'primary.main',
+                    '&:hover': { bgcolor: 'white' },
+                  }}
+                  size="small"
+                >
+                  <CameraIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="h4" fontWeight="bold" gutterBottom>
+                  {user.name}
+                </Typography>
+                <Typography variant="h6" sx={{ opacity: 0.9, mb: 1 }}>
+                  {user.email}
+                </Typography>
+                
+                {/* Only show role badge for admins - don't show to regular users */}
+                {isAdmin && (
+                  <Chip
+                    icon={<AdminIcon />}
+                    label="Administrator"
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      '& .MuiChip-icon': { color: 'white' },
+                    }}
+                  />
+                )}
+                
+                {/* Don't show user role for regular users */}
+                {!isAdmin && (
+                  <Chip
+                    icon={<PersonIcon />}
+                    label="Member"
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      '& .MuiChip-icon': { color: 'white' },
+                    }}
+                  />
+                )}
+              </Box>
+
+              {/* Edit Button */}
+              {!editing && (
+                <IconButton
+                  onClick={handleEdit}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+                  }}
+                >
+                  <EditIcon />
+                </IconButton>
+              )}
+            </Box>
+          </Paper>
+
+          {/* Alerts */}
+          {error && (
+            <Slide direction="down" in timeout={400}>
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            </Slide>
+          )}
+
+          {success && (
+            <Slide direction="down" in timeout={400}>
+              <Alert severity="success" sx={{ mb: 3 }}>
+                {success}
+              </Alert>
+            </Slide>
+          )}
+
+          <Grid container spacing={3}>
+            {/* Personal Information */}
+            <Grid item xs={12} md={8}>
+              <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                  <Typography variant="h6" fontWeight="bold">
+                    Personal Information
+                  </Typography>
+                  {editing && (
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        onClick={handleSave}
+                        disabled={saving}
+                        color="primary"
+                        sx={{ bgcolor: 'primary.light', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
+                      >
+                        {saving ? <CircularProgress size={20} /> : <SaveIcon />}
+                      </IconButton>
+                      <IconButton
+                        onClick={handleCancel}
+                        disabled={saving}
+                        color="error"
+                        sx={{ bgcolor: 'error.light', '&:hover': { bgcolor: 'error.main', color: 'white' } }}
+                      >
+                        <CancelIcon />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Box>
+
+                <form onSubmit={handleSave}>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Full Name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                        variant={editing ? 'outlined' : 'filled'}
+                        disabled={!editing}
+                        InputProps={{
+                          readOnly: !editing,
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Email Address"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        variant={editing ? 'outlined' : 'filled'}
+                        disabled={!editing}
+                        InputProps={{
+                          readOnly: !editing,
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Mobile Number"
+                        name="mobile"
+                        value={formData.mobile}
+                        onChange={handleInputChange}
+                        required
+                        variant={editing ? 'outlined' : 'filled'}
+                        disabled={!editing}
+                        InputProps={{
+                          readOnly: !editing,
+                        }}
+                      />
+                    </Grid>
+
+                    {/* Show join date instead of user ID for regular users */}
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label={isAdmin ? "User ID" : "Member Since"}
+                        value={isAdmin ? user.id : 'Member'}
+                        disabled
+                        variant="filled"
+                        helperText={isAdmin ? "Your unique identifier" : "Welcome to TechMart"}
+                      />
+                    </Grid>
+                  </Grid>
+                </form>
+              </Paper>
+            </Grid>
+
+            {/* Quick Actions & Account Info */}
+            <Grid item xs={12} md={4}>
+              {/* Quick Actions */}
+              <Paper elevation={2} sx={{ p: 3, borderRadius: 2, mb: 3 }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  Quick Actions
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      startIcon={<OrdersIcon />}
+                      onClick={() => navigate('/orders')}
+                    >
+                      My Orders
+                    </Button>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      startIcon={<HomeIcon />}
+                      onClick={() => navigate('/')}
+                    >
+                      Continue Shopping
+                    </Button>
+                  </Grid>
+                  {isAdmin && (
+                    <Grid item xs={12}>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        color="warning"
+                        startIcon={<AdminIcon />}
+                        onClick={() => navigate('/admin')}
+                      >
+                        Admin Dashboard
+                      </Button>
+                    </Grid>
+                  )}
+                </Grid>
+              </Paper>
+
+              {/* Account Security */}
+              <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <SecurityIcon sx={{ mr: 1, color: 'primary.main' }} />
+                  <Typography variant="h6" fontWeight="bold">
+                    Account Security
+                  </Typography>
+                </Box>
+                
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Account Status: <Chip label="Active" size="small" color="success" />
+                </Typography>
+                
+                {/* Don't show sensitive role info to regular users */}
+                {isAdmin && (
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Privileges: Administrator Access
+                  </Typography>
+                )}
+
+                <Divider sx={{ my: 2 }} />
+                
+                <Button
+                  fullWidth
+                  variant="text"
+                  color="error"
+                  startIcon={<LogoutIcon />}
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to logout?')) {
+                      logout();
+                      navigate('/');
+                    }
+                  }}
+                >
+                  Logout
+                </Button>
+              </Paper>
+            </Grid>
+          </Grid>
         </Box>
-      </Paper>
-    </Box>
+      </Fade>
+    </Container>
   );
 };
 

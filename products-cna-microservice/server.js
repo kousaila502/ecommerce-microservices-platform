@@ -24,7 +24,7 @@ app.use(function (err, _req, res, next) {
 });
 
 // Load initial data function (updated for Mongoose)
-const loadData = async () => {
+/*const loadData = async () => {
   try {
     console.log('Loading initial data...');
     
@@ -32,7 +32,7 @@ const loadData = async () => {
     const dbConnect = dbo.getDb();
     
     // Clear and load deals
-    /*await new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
       dbConnect.collection('deals', function (err, collection) {
         if (err) return reject(err);
         
@@ -52,7 +52,7 @@ const loadData = async () => {
           console.log('Deals loaded:', result.insertedCount);
           resolve();
         });
-    });*/
+    });
     
     // Load products using Mongoose
     await ProductService.loadInitialData(products.products);
@@ -61,7 +61,8 @@ const loadData = async () => {
   } catch (error) {
     console.error('Error loading data:', error);
   }
-};
+};*/
+
 
 // Database connection and server start
 dbo.connectToServer(function (err) {
@@ -77,7 +78,7 @@ dbo.connectToServer(function (err) {
     console.log(`Server is running on port: ${PORT}`);
     
     // Load initial data
-    await loadData();
+    //await loadData();
     
     console.log('🚀 Product Service ready!');
     console.log(`📊 API endpoints available at http://localhost:${PORT}`);

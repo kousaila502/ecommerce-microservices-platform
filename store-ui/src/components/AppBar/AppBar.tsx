@@ -1,4 +1,4 @@
-// src/components/AppBar/AppBar.tsx (REPLACE YOUR EXISTING)
+// src/components/AppBar/AppBar.tsx (COMPLETE FIXED VERSION - PERFECT SPACING)
 import * as React from 'react';
 import { styled, alpha, useTheme } from '@mui/material/styles';
 import AppBar from '@mui/material/AppBar';
@@ -10,7 +10,6 @@ import InputBase from '@mui/material/InputBase';
 import Badge from '@mui/material/Badge';
 import MenuItem from '@mui/material/MenuItem';
 import Menu from '@mui/material/Menu';
-import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -19,6 +18,8 @@ import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import ThemeContext from "../layout/ThemeContext";
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
@@ -26,20 +27,31 @@ import { useNavigate } from "react-router-dom";
 import Link from '@mui/material/Link';
 import Button from '@mui/material/Button';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../contexts/CartContext';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
-  borderRadius: theme.shape.borderRadius,
+  borderRadius: 10,
   backgroundColor: alpha(theme.palette.common.white, 0.15),
+  backdrop: 'blur(10px)',
+  border: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
   '&:hover': {
     backgroundColor: alpha(theme.palette.common.white, 0.25),
+    transform: 'translateY(-1px)',
   },
   marginRight: theme.spacing(2),
-  marginLeft: 0,
+  marginLeft: theme.spacing(2),
   width: '100%',
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   [theme.breakpoints.up('sm')]: {
     marginLeft: theme.spacing(3),
+    marginRight: theme.spacing(3),
     width: 'auto',
+    minWidth: '200px',
+  },
+  [theme.breakpoints.up('md')]: {
+    minWidth: '280px',
+    maxWidth: '350px',
   },
 }));
 
@@ -51,24 +63,98 @@ const SearchIconWrapper = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  color: alpha(theme.palette.common.white, 0.7),
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
   color: 'inherit',
+  width: '100%',
   '& .MuiInputBase-input': {
-    padding: theme.spacing(1, 1, 1, 0),
+    padding: theme.spacing(1.5, 1, 1.5, 0),
     paddingLeft: `calc(1em + ${theme.spacing(4)})`,
     transition: theme.transitions.create('width'),
     width: '100%',
-    [theme.breakpoints.up('md')]: {
-      width: '20ch',
+    fontSize: '0.9rem',
+    '&::placeholder': {
+      color: alpha(theme.palette.common.white, 0.7),
     },
+    [theme.breakpoints.up('sm')]: {
+      width: '12ch',
+      '&:focus': {
+        width: '20ch',
+      },
+    },
+    [theme.breakpoints.up('md')]: {
+      width: '18ch',
+      '&:focus': {
+        width: '25ch',
+      },
+    },
+  },
+}));
+
+const LogoContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  cursor: 'pointer',
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  marginRight: theme.spacing(2),
+  '&:hover': {
+    transform: 'scale(1.05)',
+  },
+  '& .logo-icon': {
+    fontSize: '2rem',
+    marginRight: theme.spacing(1),
+    background: 'linear-gradient(45deg, #ffffff, #e2e8f0)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    [theme.breakpoints.up('sm')]: {
+      fontSize: '2.2rem',
+    },
+  },
+  '& .logo-text': {
+    fontSize: '1.2rem',
+    fontWeight: 700,
+    letterSpacing: '-0.02em',
+    background: 'linear-gradient(45deg, #ffffff, #e2e8f0)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    [theme.breakpoints.up('sm')]: {
+      fontSize: '1.4rem',
+    },
+    [theme.breakpoints.up('md')]: {
+      fontSize: '1.6rem',
+    },
+  },
+}));
+
+const AnimatedIconButton = styled(IconButton)(({ theme }) => ({
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  marginLeft: theme.spacing(1),
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    backgroundColor: alpha(theme.palette.common.white, 0.15),
+  },
+}));
+
+const AnimatedButton = styled(Button)(({ theme }) => ({
+  borderRadius: 20,
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  backgroundColor: alpha(theme.palette.common.white, 0.1),
+  border: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
+  marginRight: theme.spacing(1.5),
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.common.white, 0.2),
+    transform: 'translateY(-1px)',
   },
 }));
 
 export default function PrimarySearchAppBar() {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout, isAdmin } = useAuth();
+  const { cartCount, toggleCartSidebar } = useCart();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] =
@@ -99,7 +185,15 @@ export default function PrimarySearchAppBar() {
       navigate('/login');
       return;
     }
-    navigate('/cart');
+    toggleCartSidebar();
+  };
+
+  const handleOrdersClick = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    navigate('/orders');
   };
 
   const handleSearchSubmit = (event: React.FormEvent) => {
@@ -111,23 +205,13 @@ export default function PrimarySearchAppBar() {
     }
   };
 
-  const handleProfileClick = () => {
-    navigate('/profile');
-    handleMenuClose();
-  };
-
-  const handleRegisterClick = () => {
-    navigate('/register');
-    handleMenuClose();
-  };
-
   const handleLoginClick = () => {
     navigate('/login');
     handleMenuClose();
   };
 
-  const handleUsersClick = () => {
-    navigate('/users');
+  const handleRegisterClick = () => {
+    navigate('/register');
     handleMenuClose();
   };
 
@@ -154,45 +238,70 @@ export default function PrimarySearchAppBar() {
       }}
       open={isMenuOpen}
       onClose={handleMenuClose}
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          mt: 1.5,
+          minWidth: 200,
+          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+          border: '1px solid rgba(0,0,0,0.05)',
+        },
+      }}
     >
       {isAuthenticated ? (
         // Authenticated user menu
         [
-          <MenuItem key="welcome" disabled>
-            <Typography variant="body2" color="text.secondary">
-              Welcome, {user?.name}
-            </Typography>
+          <MenuItem key="welcome" disabled sx={{ py: 2, opacity: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold',
+                }}
+              >
+                {user?.name?.charAt(0) || 'U'}
+              </Box>
+              <Typography variant="body2" color="text.secondary" noWrap>
+                Welcome, {user?.name || 'User'}
+              </Typography>
+            </Box>
           </MenuItem>,
-          <MenuItem key="profile" onClick={() => { navigate('/profile'); handleMenuClose(); }}>
-            <AccountCircle sx={{ mr: 1 }} />
+          <MenuItem key="profile" onClick={() => { navigate('/profile'); handleMenuClose(); }} sx={{ py: 1.5 }}>
+            <AccountCircle sx={{ mr: 2, color: 'primary.main' }} />
             My Profile
           </MenuItem>,
+          <MenuItem key="orders" onClick={() => { navigate('/orders'); handleMenuClose(); }} sx={{ py: 1.5 }}>
+            <ReceiptLongIcon sx={{ mr: 2, color: 'primary.main' }} />
+            My Orders
+          </MenuItem>,
           isAdmin && (
-            <MenuItem key="admin-dashboard" onClick={() => { navigate('/admin'); handleMenuClose(); }}>
-              <AdminPanelSettingsIcon sx={{ mr: 1 }} />
+            <MenuItem key="admin-dashboard" onClick={() => { navigate('/admin'); handleMenuClose(); }} sx={{ py: 1.5 }}>
+              <AdminPanelSettingsIcon sx={{ mr: 2, color: 'warning.main' }} />
               Admin Dashboard
             </MenuItem>
           ),
-          isAdmin && (
-            <MenuItem key="users" onClick={() => { navigate('/users'); handleMenuClose(); }}>
-              <AdminPanelSettingsIcon sx={{ mr: 1 }} />
-              User Management (Legacy)
-            </MenuItem>
-          ),
-          <MenuItem key="logout" onClick={handleLogout}>
-            <LogoutIcon sx={{ mr: 1 }} />
+          <MenuItem key="logout" onClick={handleLogout} sx={{ py: 1.5, color: 'error.main' }}>
+            <LogoutIcon sx={{ mr: 2 }} />
             Logout
           </MenuItem>,
         ]
       ) : (
         // Guest user menu
         [
-          <MenuItem key="login" onClick={handleLoginClick}>
-            <LoginIcon sx={{ mr: 1 }} />
+          <MenuItem key="login" onClick={handleLoginClick} sx={{ py: 1.5 }}>
+            <LoginIcon sx={{ mr: 2, color: 'primary.main' }} />
             Sign In
           </MenuItem>,
-          <MenuItem key="register" onClick={handleRegisterClick}>
-            <PersonAddIcon sx={{ mr: 1 }} />
+          <MenuItem key="register" onClick={handleRegisterClick} sx={{ py: 1.5 }}>
+            <PersonAddIcon sx={{ mr: 2, color: 'secondary.main' }} />
             Create Account
           </MenuItem>,
         ]
@@ -202,20 +311,6 @@ export default function PrimarySearchAppBar() {
 
   const theme = useTheme();
   const colorMode = React.useContext(ThemeContext);
-
-  const renderThemeToggle = (
-    <Box
-      sx={{
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      Switch theme
-      <IconButton sx={{ ml: 0 }} onClick={colorMode.toggleColorMode} color="inherit">
-        {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-      </IconButton>
-    </Box>
-  );
 
   const mobileMenuId = 'primary-search-account-menu-mobile';
   const renderMobileMenu = (
@@ -233,121 +328,186 @@ export default function PrimarySearchAppBar() {
       }}
       open={isMobileMenuOpen}
       onClose={handleMobileMenuClose}
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          mt: 1.5,
+          minWidth: 200,
+        },
+      }}
     >
-      <MenuItem onClick={handleCartClick}>
-        <IconButton
-          size="large"
-          aria-label="shopping cart"
-          color="inherit"
-        >
-          <Badge badgeContent={1} color="error">
+      {isAuthenticated && (
+        <MenuItem onClick={handleOrdersClick} sx={{ py: 2 }}>
+          <IconButton size="large" color="inherit">
+            <ReceiptLongIcon />
+          </IconButton>
+          <Typography sx={{ ml: 1 }}>My Orders</Typography>
+        </MenuItem>
+      )}
+      <MenuItem onClick={handleCartClick} sx={{ py: 2 }}>
+        <IconButton size="large" color="inherit">
+          <Badge badgeContent={cartCount || 0} color="error" max={99}>
             <ShoppingCartIcon />
           </Badge>
         </IconButton>
-        <Typography>Cart {!isAuthenticated && '(Login Required)'}</Typography>
+        <Typography sx={{ ml: 1 }}>
+          Cart {!isAuthenticated && '(Login Required)'}
+        </Typography>
       </MenuItem>
-      <MenuItem onClick={handleProfileMenuOpen}>
-        <IconButton
-          size="large"
-          aria-label="account of current user"
-          aria-controls="primary-search-account-menu"
-          aria-haspopup="true"
-          color="inherit"
-        >
+      <MenuItem onClick={handleProfileMenuOpen} sx={{ py: 2 }}>
+        <IconButton size="large" color="inherit">
           <AccountCircle />
         </IconButton>
-        <Typography>{isAuthenticated ? 'Profile' : 'Account'}</Typography>
+        <Typography sx={{ ml: 1 }}>
+          {isAuthenticated ? 'Profile' : 'Account'}
+        </Typography>
       </MenuItem>
     </Menu>
   );
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="open drawer"
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Link href="/" variant="h5" underline="none"
-            noWrap
-            sx={{ color: 'white', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-            <img src="logo.png" width="32" height="32" alt="logo" />
-            &nbsp;e-commerce store
-          </Link>
-          <Box sx={{ flexGrow: 1 }} />
-          <Box sx={{ width: '45%' }}>
-            <form onSubmit={handleSearchSubmit}>
+      <AppBar position="static" elevation={0}>
+        <Toolbar 
+          sx={{ 
+            px: { xs: 1.5, sm: 3 },
+            minHeight: { xs: 64, sm: 70 },
+            justifyContent: 'space-between',
+          }}
+        >
+          {/* Logo - Enhanced with modern design */}
+          <LogoContainer onClick={() => navigate('/')}>
+            <StorefrontIcon className="logo-icon" />
+            <Typography 
+              variant="h6" 
+              className="logo-text"
+              sx={{ 
+                display: { xs: 'none', sm: 'block' }
+              }}
+            >
+              TechMart
+            </Typography>
+          </LogoContainer>
+          
+          {/* Search - Enhanced with blur effect */}
+          <Box sx={{ 
+            flexGrow: 1, 
+            display: 'flex',
+            justifyContent: 'center',
+            mx: { xs: 1, sm: 2 },
+          }}>
+            <form onSubmit={handleSearchSubmit} style={{ width: '100%', maxWidth: '400px' }}>
               <Search>
                 <SearchIconWrapper>
                   <SearchIcon />
                 </SearchIconWrapper>
                 <StyledInputBase
                   name="search"
-                  placeholder="Search for products ..."
+                  placeholder="Search products..."
                   inputProps={{ 'aria-label': 'search' }}
                 />
               </Search>
             </form>
           </Box>
-          <Box sx={{ flexGrow: 1 }} />
-          {renderThemeToggle}
-          <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-            {/* Desktop: Show auth status */}
-            {isAuthenticated ? (
-              <Typography variant="body2" sx={{ mr: 2, alignSelf: 'center' }}>
-                Welcome, {user?.name}
-              </Typography>
-            ) : (
-              <Button 
-                color="inherit" 
-                onClick={handleLoginClick}
-                startIcon={<LoginIcon />}
-                sx={{ mr: 1 }}
-              >
-                Login
-              </Button>
-            )}
+          
+          {/* Right side controls */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {/* Theme Toggle */}
+            <AnimatedIconButton 
+              onClick={colorMode.toggleColorMode} 
+              color="inherit"
+              size="medium"
+              sx={{ mr: { xs: 1, md: 2 } }}
+            >
+              {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+            </AnimatedIconButton>
             
-            <IconButton
-              size="large"
-              edge="end"
-              aria-label="account of current user"
-              aria-controls={menuId}
-              aria-haspopup="true"
-              onClick={handleProfileMenuOpen}
-              color="inherit"
-            >
-              <AccountCircle />
-            </IconButton>
-            <IconButton
-              size="large"
-              aria-label="shopping cart"
-              color="inherit"
-              onClick={handleCartClick}
-              title={!isAuthenticated ? 'Login required for cart' : 'View cart'}
-            >
-              <Badge badgeContent={1} color="error">
-                <ShoppingCartIcon />
-              </Badge>
-            </IconButton>
-          </Box>
-          <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-            <IconButton
-              size="large"
-              aria-label="show more"
-              aria-controls={mobileMenuId}
-              aria-haspopup="true"
-              onClick={handleMobileMenuOpen}
-              color="inherit"
-            >
-              <MoreIcon />
-            </IconButton>
+            {/* Desktop Navigation */}
+            <Box sx={{ 
+              display: { xs: 'none', md: 'flex' }, 
+              alignItems: 'center',
+              gap: 1,
+            }}>
+              {isAuthenticated ? (
+                <>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      mr: 2,
+                      maxWidth: { md: '100px', lg: '150px' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      display: { xs: 'none', lg: 'block' },
+                      opacity: 0.9,
+                    }}
+                  >
+                    Hi, {user?.name || 'User'}
+                  </Typography>
+                  <AnimatedButton 
+                    color="inherit" 
+                    onClick={handleOrdersClick}
+                    startIcon={<ReceiptLongIcon />}
+                    sx={{ px: 2 }}
+                    size="small"
+                  >
+                    Orders
+                  </AnimatedButton>
+                </>
+              ) : (
+                <AnimatedButton 
+                  color="inherit" 
+                  onClick={handleLoginClick}
+                  startIcon={<LoginIcon />}
+                  sx={{ px: 2 }}
+                  size="small"
+                >
+                  Login
+                </AnimatedButton>
+              )}
+              
+              <AnimatedIconButton
+                size="large"
+                onClick={handleProfileMenuOpen}
+                color="inherit"
+              >
+                <AccountCircle />
+              </AnimatedIconButton>
+              
+              <AnimatedIconButton
+                size="large"
+                onClick={handleCartClick}
+                color="inherit"
+                title={!isAuthenticated ? 'Login required for cart' : 'View cart'}
+              >
+                <Badge 
+                  badgeContent={cartCount || 0} 
+                  color="error" 
+                  max={99}
+                  sx={{
+                    '& .MuiBadge-badge': {
+                      background: 'linear-gradient(45deg, #dc2626, #ef4444)',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      fontSize: '0.7rem',
+                    },
+                  }}
+                >
+                  <ShoppingCartIcon />
+                </Badge>
+              </AnimatedIconButton>
+            </Box>
+            
+            {/* Mobile Menu Button */}
+            <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+              <AnimatedIconButton
+                size="large"
+                onClick={handleMobileMenuOpen}
+                color="inherit"
+              >
+                <MoreIcon />
+              </AnimatedIconButton>
+            </Box>
           </Box>
         </Toolbar>
       </AppBar>
