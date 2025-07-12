@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-postgres-deployment
+  labels:
+    app: order-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-postgres
+  template:
+    metadata:
+      labels:
+        app: order-postgres
+    spec:
+      containers:
+      - name: order-postgres
+        image: postgres:13
+        env:
+        - name: POSTGRES_DB
+          value: orderdb
+        - name: POSTGRES_USER
+          value: admin
+        - name: POSTGRES_PASSWORD
+          value: password123
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: order-postgres-storage
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: order-postgres-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-postgres-service
+spec:
+  selector:
+    app: order-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP

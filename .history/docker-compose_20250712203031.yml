@@ -79,7 +79,7 @@ services:
     restart: unless-stopped
 
   product-service:
-    build: ./products-cna-microservice
+    build: ./product-cna-microservice
     container_name: product-service
     ports:
       - "3001:3001"

@@ -79,7 +79,7 @@ services:
     restart: unless-stopped
 
   product-service:
-    build: ./products-cna-microservice
+    build: ./product-cna-microservice
     container_name: product-service
     ports:
       - "3001:3001"
@@ -88,7 +88,7 @@ services:
     restart: unless-stopped
 
   search-service:
-    build: ./search-cna-microservice
+    build: ./search-cna-service
     container_name: search-service
     ports:
       - "4000:4000"
