@@ -1,0 +1,131 @@
+version: '3.8'
+services:
+  # Databases (from your existing docker-compose-databases.yml)
+  mongodb:
+    image: mongo:4.4
+    container_name: ecommerce-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: productdb
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass password123
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  postgresql:
+    image: postgres:13
+    container_name: ecommerce-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  postgresql-orders:
+    image: postgres:13
+    container_name: ecommerce-postgres-orders
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: orderdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - postgres_orders_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+    container_name: ecommerce-elasticsearch
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  # Microservices
+  user-service:
+    image: user-service:latest
+    container_name: user-service
+    ports:
+      - "9090:9090"
+    environment:
+      - DATABASE_URL=postgresql://admin:password123@postgresql:5432/userdb
+    restart: unless-stopped
+
+  product-service:
+    image: product-service:latest
+    container_name: product-service
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGO_URI=mongodb://admin:password123@mongodb:27017/productdb?authSource=admin
+    restart: unless-stopped
+
+  search-service:
+    image: search-service:latest
+    container_name: search-service
+    ports:
+      - "4000:4000"
+    environment:
+      - ELASTIC_URL=http://elasticsearch:9200
+      - PORT=4000
+    restart: unless-stopped
+
+  cart-service:
+    image: cart-service:latest
+    container_name: cart-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_PASSWORD=password123
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRATION=1800000
+      - SERVER_PORT=8080
+      - USER_SERVICE_URL=http://user-service:9090
+    restart: unless-stopped
+
+  order-service:
+    image: order-service:latest
+    container_name: order-service
+    ports:
+      - "8081:8081"
+    environment:
+      - DATABASE_URL=postgresql://admin:password123@postgresql-orders:5432/orderdb
+    restart: unless-stopped
+
+  frontend:
+    image: frontend-service:latest
+    container_name: frontend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  redis_data:
+  postgres_data:
+  postgres_orders_data:
+  elasticsearch_data:
