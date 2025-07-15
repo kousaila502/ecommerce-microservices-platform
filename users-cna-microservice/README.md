@@ -21,4 +21,4 @@ Start applciation locally
 python app.py
 ```
 
-```docker build -t users:latest .```
+```docker build -t users:latest .```"# Traditional CI/CD Test - 15/07/2025" 
