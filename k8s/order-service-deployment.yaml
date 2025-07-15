@@ -25,7 +25,7 @@ spec:
         imagePullPolicy: Never
         env:
         - name: DATABASE_URL
-          value: postgresql://admin:password123@order-postgres-service:5432/orderdb
+          value: "postgresql://admin:password123@order-postgres-service.default.svc.cluster.local:5432/orderdb"
         - name: USER_SERVICE_URL
           value: http://user-service:9090
         - name: CART_SERVICE_URL

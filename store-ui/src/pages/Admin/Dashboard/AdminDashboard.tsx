@@ -20,6 +20,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getOrderStats } from '../../../api/order';
+import { adminUrl } from '../../../api/config';
 
 interface UserStats {
   total_users: number;
@@ -67,7 +68,7 @@ const AdminDashboard: React.FC = () => {
       setLoading(true);
 
       // Fetch user statistics
-      const statsResponse = await fetch('http://localhost:9090/admin/stats', {
+      const statsResponse = await fetch(`${adminUrl}/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -77,7 +78,7 @@ const AdminDashboard: React.FC = () => {
       setStats(await statsResponse.json());
 
       // Fetch recent users
-      const usersResponse = await fetch('http://localhost:9090/admin/users', {
+      const usersResponse = await fetch(`${adminUrl}/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

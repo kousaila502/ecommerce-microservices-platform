@@ -28,7 +28,7 @@ export const createUser = async (userData: CreateUserRequest): Promise<User | nu
     try {
         console.log('Sending user creation request with data:', userData);
         
-        const response = await axiosClient.post(`${usersUrl}users`, null, {
+        const response = await axiosClient.post(`${usersUrl}`, null, {
             params: {
                 name: userData.name,
                 email: userData.email,
@@ -53,7 +53,7 @@ export const createUser = async (userData: CreateUserRequest): Promise<User | nu
 // Get user by ID
 export const getUser = async (userId: number): Promise<User | null> => {
     try {
-        const response = await axiosClient.get(`${usersUrl}users/${userId}`);
+        const response = await axiosClient.get(`${usersUrl}/${userId}`);
         return response.data;
     } catch (err: any) {
         console.error('Error fetching user:', err.message);
@@ -68,7 +68,7 @@ export const getUser = async (userId: number): Promise<User | null> => {
 // Get all users
 export const getAllUsers = async (): Promise<User[] | null> => {
     try {
-        const response = await axiosClient.get(`${usersUrl}users`);
+        const response = await axiosClient.get(`${usersUrl}`);
         return response.data;
     } catch (err: any) {
         console.error('Error fetching users:', err.message);
@@ -83,7 +83,7 @@ export const getAllUsers = async (): Promise<User[] | null> => {
 // Update user profile
 export const updateUser = async (userId: number, userData: UpdateUserRequest): Promise<User | null> => {
     try {
-        const response = await axiosClient.put(`${usersUrl}users/${userId}`, null, {
+        const response = await axiosClient.put(`${usersUrl}/${userId}`, null, {
             params: {
                 ...userData
             }

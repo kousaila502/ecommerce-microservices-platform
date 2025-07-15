@@ -29,7 +29,7 @@ export interface AddToCartPayload {
 // UPDATED: Add item to cart (with proper authentication)
 export const addToCart = async (userId: number, item: AddToCartPayload, token: string): Promise<string | null> => {
     try {
-        const response = await axiosClient.post(`${cartUrl}cart/${userId}/items`, item, {
+        const response = await axiosClient.post(`${cartUrl}/${userId}/items`, item, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -48,7 +48,7 @@ export const addToCart = async (userId: number, item: AddToCartPayload, token: s
 // UPDATED: Get cart (with proper authentication)
 export const getCart = async (userId: number, token: string): Promise<Cart | null> => {
     try {
-        const response = await axiosClient.get(`${cartUrl}cart/${userId}`, {
+        const response = await axiosClient.get(`${cartUrl}/${userId}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -73,7 +73,7 @@ export const updateCartItemQuantity = async (
 ): Promise<string | null> => {
     try {
         const response = await axiosClient.put(
-            `${cartUrl}cart/${userId}/items/${productId}?quantity=${quantity}`,
+            `${cartUrl}/${userId}/items/${productId}?quantity=${quantity}`,
             {},
             {
                 headers: {
@@ -95,7 +95,7 @@ export const removeFromCart = async (
     token: string
 ): Promise<string | null> => {
     try {
-        const response = await axiosClient.delete(`${cartUrl}cart/${userId}/items/${productId}`, {
+        const response = await axiosClient.delete(`${cartUrl}/${userId}/items/${productId}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -110,7 +110,7 @@ export const removeFromCart = async (
 // Clear entire cart
 export const clearCart = async (userId: number, token: string): Promise<string | null> => {
     try {
-        const response = await axiosClient.delete(`${cartUrl}cart/${userId}`, {
+        const response = await axiosClient.delete(`${cartUrl}/${userId}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -125,7 +125,7 @@ export const clearCart = async (userId: number, token: string): Promise<string |
 // Get cart summary
 export const getCartSummary = async (userId: number, token: string): Promise<{itemCount: number, total: number, currency: string} | null> => {
     try {
-        const response = await axiosClient.get(`${cartUrl}cart/${userId}/summary`, {
+        const response = await axiosClient.get(`${cartUrl}/${userId}/summary`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

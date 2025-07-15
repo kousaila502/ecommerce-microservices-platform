@@ -28,6 +28,7 @@ import {
   ResponsiveContainer as RechartsResponsiveContainer
 } from 'recharts';
 import { useAuth } from '../../../contexts/AuthContext';
+import { adminUrl } from '../../../api/config';
 
 // Type assertions for all Recharts components
 const ResponsiveContainer = RechartsResponsiveContainer as any;
@@ -94,14 +95,14 @@ const Analytics: React.FC = () => {
       setLoading(true);
       
       // Fetch stats
-      const statsResponse = await fetch('http://localhost:9090/admin/stats', {
+      const statsResponse = await fetch(`${adminUrl}/stats`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       const statsData = await statsResponse.json();
       setStats(statsData);
 
       // Fetch users for analytics
-      const usersResponse = await fetch('http://localhost:9090/admin/users', {
+      const usersResponse = await fetch(`${adminUrl}/users`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       const usersData = await usersResponse.json();

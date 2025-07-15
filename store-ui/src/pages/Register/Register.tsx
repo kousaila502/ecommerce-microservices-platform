@@ -16,7 +16,7 @@ interface RegisterRequest {
 
 // Updated API call for authentication registration
 const registerUser = async (userData: RegisterRequest) => {
-  const response = await fetch('http://localhost:9090/auth/register', {
+  const response = await fetch('http://localhost:8080/api/auth/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -1,40 +1,34 @@
-FROM node:18-alpine3.16 AS build-step
+FROM node:18-alpine AS build-step
 
-# Update latest security patches (CACHED - rarely changes)
-RUN apk update && apk upgrade
+# Performance optimizations
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+ENV GENERATE_SOURCEMAP=false
+ENV INLINE_RUNTIME_CHUNK=false
 
-# SET default APP_BUILD_DIR path (CACHED - never changes)
 ARG APP_BUILD_DIR=/src/app
 ARG APP_SERVE_DIR=/store-ui
 
-# Create APP_BUILD_DIR path (CACHED - never changes)
-RUN mkdir -p $APP_BUILD_DIR
-RUN mkdir -p $APP_SERVE_DIR
-
-# Change working directory (CACHED - never changes)
 WORKDIR $APP_BUILD_DIR
 
-# Copy package.json first (CACHED - unless dependencies change)
-COPY package.json package-lock.json* ./
+# Copy package files first for better layer caching
+COPY package*.json ./
+COPY .npmrc ./
 
-# Install dependencies (CACHED - unless package.json changes)
-RUN npm install --legacy-peer-deps
+# Use npm ci for faster, reliable installs
+RUN npm ci --silent --legacy-peer-deps
 
-# Copy configuration files (CACHED - unless config changes)
+# Copy source code
 COPY public/ ./public/
-COPY *.json ./
-COPY *.js ./
-COPY *.ts ./
-COPY *.html ./
-
-# Copy ONLY src/ folder (REBUILDS - when src changes)
 COPY src/ ./src/
+COPY *.json *.js *.ts *.html ./
 
-# Build application (REBUILDS - when src changes)
+# Build the app
 RUN npm run build
 
+# Production stage
 FROM nginx:1.21.6-alpine
 COPY nginx.conf /etc/nginx/nginx.conf
 ARG APP_BUILD_DIR=/src/app
 ARG APP_SERVE_DIR=/store-ui
 COPY --from=build-step $APP_BUILD_DIR/build $APP_SERVE_DIR
+EXPOSE 80

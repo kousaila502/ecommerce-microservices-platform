@@ -53,7 +53,7 @@ export const createOrder = async (
     token: string
 ): Promise<Order | null> => {
     try {
-        const response = await axiosClient.post(`${ordersUrl}orders/`, payload, {
+        const response = await axiosClient.post(`${ordersUrl}/`, payload, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -68,7 +68,7 @@ export const createOrder = async (
 // Get user's orders
 export const getUserOrders = async (token: string, page: number = 1, size: number = 10): Promise<Order[] | null> => {
     try {
-        const response = await axiosClient.get(`${ordersUrl}orders/?page=${page}&size=${size}`, {
+        const response = await axiosClient.get(`${ordersUrl}?page=${page}&size=${size}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;
@@ -81,7 +81,7 @@ export const getUserOrders = async (token: string, page: number = 1, size: numbe
 // Get order by ID
 export const getOrderById = async (id: number, token: string): Promise<Order | null> => {
     try {
-        const response = await axiosClient.get(`${ordersUrl}orders/${id}`, {
+        const response = await axiosClient.get(`${ordersUrl}/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;
@@ -94,7 +94,7 @@ export const getOrderById = async (id: number, token: string): Promise<Order | n
 // ADMIN: Get all orders
 export const getAllOrders = async (token: string, page: number = 1, size: number = 20): Promise<Order[] | null> => {
     try {
-        const response = await axiosClient.get(`${ordersUrl}admin/orders/?page=${page}&size=${size}`, {
+        const response = await axiosClient.get(`${ordersUrl}/admin?page=${page}&size=${size}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;
@@ -117,7 +117,7 @@ export const updateOrderStatus = async (
         if (trackingNumber) payload.tracking_number = trackingNumber;
         if (notes) payload.notes = notes;
 
-        const response = await axiosClient.put(`${ordersUrl}orders/${id}`, payload, {
+        const response = await axiosClient.put(`${ordersUrl}/${id}`, payload, {
             headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;
@@ -130,7 +130,7 @@ export const updateOrderStatus = async (
 // ADMIN: Get order statistics
 export const getOrderStats = async (token: string): Promise<any | null> => {
     try {
-        const response = await axiosClient.get(`${ordersUrl}admin/orders/stats`, {
+        const response = await axiosClient.get(`${ordersUrl}/admin/stats`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;

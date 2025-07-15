@@ -54,7 +54,7 @@ export const getAllProducts = async (params?: {
         if (params?.minPrice) queryParams.append('minPrice', params.minPrice.toString());
         if (params?.maxPrice) queryParams.append('maxPrice', params.maxPrice.toString());
 
-        const response = await axiosClient.get(`${productsUrl}products?${queryParams.toString()}`);
+        const response = await axiosClient.get(`${productsUrl}?${queryParams.toString()}`);
         
         // Handle new response format
         if (response.data.success) {
@@ -72,7 +72,7 @@ export const getAllProducts = async (params?: {
 // Get product by ID
 export const getProductById = async (id: number): Promise<Product | null> => {
     try {
-        const response = await axiosClient.get(`${productsUrl}products/${id}`);
+        const response = await axiosClient.get(`${productsUrl}/${id}`);
         
         // Handle new response format
         if (response.data.success) {
@@ -90,7 +90,7 @@ export const getProductById = async (id: number): Promise<Product | null> => {
 // Get product by SKU (UPDATED for new response format)
 export const getProductBySku = async (sku: string): Promise<Product | null> => {
     try {
-        const response = await axiosClient.get(`${productsUrl}products/sku/${sku}`);
+        const response = await axiosClient.get(`${productsUrl}/sku/${sku}`);
         
         // Handle new response format
         if (response.data.success) {
@@ -112,7 +112,7 @@ export const searchProducts = async (searchTerm: string, limit?: number): Promis
         queryParams.append('search', searchTerm);
         if (limit) queryParams.append('limit', limit.toString());
 
-        const response = await axiosClient.get(`${productsUrl}products?${queryParams.toString()}`);
+        const response = await axiosClient.get(`${productsUrl}?${queryParams.toString()}`);
         
         if (response.data.success) {
             return response.data.data;

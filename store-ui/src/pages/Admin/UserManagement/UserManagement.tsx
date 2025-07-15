@@ -32,6 +32,7 @@ import {
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../../contexts/AuthContext';
+import { adminUrl } from '../../../api/config';
 
 interface User {
   id: number;
@@ -111,7 +112,7 @@ const UserManagement: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:9090/admin/users', {
+      const response = await fetch(`${adminUrl}/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -136,7 +137,7 @@ const UserManagement: React.FC = () => {
     try {
       setOrdersLoading(true);
       // This endpoint might need to be created in your backend
-      const response = await fetch(`http://localhost:8081/admin/users/${userId}/orders`, {
+      const response = await fetch(`${adminUrl}/users/${userId}/orders`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -211,14 +212,14 @@ const UserManagement: React.FC = () => {
 
       switch (action) {
         case 'block':
-          endpoint = `http://localhost:9090/admin/users/${userId}/block`;
+          endpoint = `${adminUrl}/users/${userId}/block`;
           body = { reason };
           break;
         case 'unblock':
-          endpoint = `http://localhost:9090/admin/users/${userId}/unblock`;
+          endpoint = `${adminUrl}/users/${userId}/unblock`;
           break;
         case 'suspend':
-          endpoint = `http://localhost:9090/admin/users/${userId}/suspend`;
+          endpoint = `${adminUrl}/users/${userId}/suspend`;
           body = { reason };
           break;
       }

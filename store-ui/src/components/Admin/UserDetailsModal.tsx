@@ -16,6 +16,8 @@ import {
   CheckCircle
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+// Import adminUrl from your config file (adjust the path as needed)
+import { adminUrl } from '../../api/config';
 
 interface User {
   id: number;
@@ -62,7 +64,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ open, user, onClose
 
     try {
       setLoadingSessions(true);
-      const response = await fetch(`http://localhost:9090/admin/users/${user.id}/sessions`, {
+      const response = await fetch(`${adminUrl}/users/${user.id}/sessions`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

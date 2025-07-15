@@ -36,33 +36,28 @@ interface AuthProviderProps {
 // Auth API functions
 const authApi = {
   async login(email: string, password: string) {
-    const response = await fetch('http://localhost:9090/auth/login', {
+    const response = await fetch('http://localhost:8080/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ email, password }),
     });
-
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Login failed');
     }
-
     return response.json();
   },
-
   async getCurrentUser(token: string) {
-    const response = await fetch('http://localhost:9090/auth/me', {
+    const response = await fetch('http://localhost:8080/api/auth/me', {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
-
     if (!response.ok) {
       throw new Error('Failed to get user info');
     }
-
     return response.json();
   },
 };
