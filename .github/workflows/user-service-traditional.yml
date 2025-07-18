@@ -333,9 +333,9 @@ jobs:
           PRODUCTION_TIME=${{ needs.deploy-production.outputs.production-time }}
           
           # Calculate approval times
-          BUILD_APPROVAL_TIME=$((${{ needs.manual-approval-build.outputs.approval-end }} - ${{ needs.manual-approval-build.outputs.approval-start }}))
-          STAGING_APPROVAL_TIME=$((${{ needs.manual-approval-staging.outputs.staging-approval-end }} - ${{ needs.manual-approval-staging.outputs.staging-approval-start }}))
-          PROD_APPROVAL_TIME=$((${{ needs.manual-approval-production.outputs.prod-approval-end }} - ${{ needs.manual-approval-production.outputs.prod-approval-start }}))
+          BUILD_APPROVAL_TIME=$((${{ needs.manual-approval-build.outputs.approval-end || '0' }} - ${{ needs.manual-approval-build.outputs.approval-start || '0' }}))
+          STAGING_APPROVAL_TIME=$((${{ needs.manual-approval-staging.outputs.staging-approval-end || '0' }} - ${{ needs.manual-approval-staging.outputs.staging-approval-start || '0' }}))
+          PROD_APPROVAL_TIME=$((${{ needs.manual-approval-production.outputs.prod-approval-end || '0' }} - ${{ needs.manual-approval-production.outputs.prod-approval-start || '0' }}))
           
           # Calculate total pipeline time
           PIPELINE_START=${{ needs.build-and-test.outputs.build-start }}
