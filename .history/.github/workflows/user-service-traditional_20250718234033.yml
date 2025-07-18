@@ -326,18 +326,12 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
-        with:
-          install_components: 'gke-gcloud-auth-plugin'
 
-      - name: Configure kubectl
+      - name: Get GKE credentials
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} \
             --zone ${{ env.CLUSTER_ZONE }} \
             --project ${{ env.PROJECT_ID }}
-          
-      - name: Set auth plugin environment
-        run: |
-          echo "USE_GKE_GCLOUD_AUTH_PLUGIN=True" >> $GITHUB_ENV
 
       - name: Record production deploy start
         id: timing
@@ -369,7 +363,7 @@ jobs:
           echo "production-time=$PRODUCTION_TIME" >> $GITHUB_OUTPUT
           echo "✅ PRODUCTION DEPLOYMENT COMPLETED at $(date -d @$PRODUCTION_END)"
           echo "⏱️ Production Duration: $PRODUCTION_TIME seconds"
-          
+
   # Job 8: Comprehensive Metrics Collection
   collect-metrics:
     name: 📊 Traditional CI/CD Metrics

@@ -369,7 +369,6 @@ jobs:
           echo "production-time=$PRODUCTION_TIME" >> $GITHUB_OUTPUT
           echo "✅ PRODUCTION DEPLOYMENT COMPLETED at $(date -d @$PRODUCTION_END)"
           echo "⏱️ Production Duration: $PRODUCTION_TIME seconds"
-          
   # Job 8: Comprehensive Metrics Collection
   collect-metrics:
     name: 📊 Traditional CI/CD Metrics
