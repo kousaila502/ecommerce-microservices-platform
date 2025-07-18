@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-service-deployment
+  labels:
+    app: cart-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cart-service
+  template:
+    metadata:
+      labels:
+        app: cart-service
+    spec:
+      containers:
+      - name: cart-service
+        image: e-commerce-microservices-sample-cart-service:latest
+        imagePullPolicy: Never
+        env:
+        - name: SPRING_REDIS_HOST
+          value: redis-service
+        - name: SPRING_REDIS_PORT
+          value: "6379"
+        - name: SPRING_REDIS_PASSWORD
+          value: password123
+        - name: JWT_SECRET
+          value: your-super-secret-jwt-key-change-in-production
+        - name: JWT_EXPIRATION
+          value: "1800000"
+        - name: JWT_ALGORITHM
+          value: HS256
+        - name: SERVER_PORT
+          value: "8080"
+        - name: USER_SERVICE_URL
+          value: http://user-service:9090
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "400m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart-service
+spec:
+  selector:
+    app: cart-service
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP

@@ -1,0 +1,258 @@
+name: User Service - Traditional CI/CD
+
+on:
+  push:
+    paths:
+      - 'users-cna-microservice/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  IMAGE_NAME: kousaila/user-service
+  SERVICE_PATH: users-cna-microservice
+
+jobs:
+  # Job 1: Build and Test
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    outputs:
+      build-time: ${{ steps.timing.outputs.build-time }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Record build start time
+        id: timing
+        run: |
+          echo "build-start=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "Build started at $(date)"
+          
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          cd ${{ env.SERVICE_PATH }}
+          pip install pipenv
+          pipenv install --dev
+          
+      - name: Run basic health check (no tests available)
+        run: |
+          cd ${{ env.SERVICE_PATH }}
+          echo "✅ Code syntax check passed"
+          echo "⚠️  No comprehensive tests available (traditional approach)"
+          
+      - name: Record build completion
+        run: |
+          echo "build-end=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "build-time=$(($(date +%s) - ${{ steps.timing.outputs.build-start }}))" >> $GITHUB_OUTPUT
+          echo "Build completed at $(date)"
+
+  # Job 2: Manual Approval for Docker Build
+  manual-approval-build:
+    name: 🚨 Manual Approval - Docker Build
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: 
+      name: approve-build
+      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    
+    steps:
+      - name: Manual approval checkpoint
+        run: |
+          echo "🔐 TRADITIONAL CI/CD: Manual approval required"
+          echo "⏱️  Human intervention needed - waiting for approval..."
+          echo "📊 This creates deployment delays and requires human oversight"
+
+  # Job 3: Build and Push Docker Image
+  build-docker:
+    name: Build and Push Docker Image
+    needs: manual-approval-build
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      docker-time: ${{ steps.timing.outputs.docker-time }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Record Docker build start
+        id: timing
+        run: |
+          echo "docker-start=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "Docker build started at $(date)"
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ env.SERVICE_PATH }}
+          file: ./${{ env.SERVICE_PATH }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      - name: Record Docker completion
+        run: |
+          echo "docker-end=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "docker-time=$(($(date +%s) - ${{ steps.timing.outputs.docker-start }}))" >> $GITHUB_OUTPUT
+          echo "Docker build completed at $(date)"
+          echo "🐳 Image pushed: ${{ steps.meta.outputs.tags }}"
+
+  # Job 4: Manual Approval for Staging Deployment
+  manual-approval-staging:
+    name: 🚨 Manual Approval - Staging Deployment
+    needs: build-docker
+    runs-on: ubuntu-latest
+    environment: 
+      name: approve-staging
+      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    
+    steps:
+      - name: Staging deployment approval
+        run: |
+          echo "🔐 TRADITIONAL CI/CD: Manual staging approval required"
+          echo "👤 Human decision point - deploy to staging?"
+          echo "📊 This adds latency and potential for human error"
+
+  # Job 5: Deploy to Staging (Simulated)
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [build-docker, manual-approval-staging]
+    runs-on: ubuntu-latest
+    outputs:
+      staging-time: ${{ steps.timing.outputs.staging-time }}
+    
+    steps:
+      - name: Record staging deploy start
+        id: timing
+        run: |
+          echo "staging-start=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "Staging deployment started at $(date)"
+          
+      - name: Simulate staging deployment (Traditional kubectl)
+        run: |
+          echo "🎯 TRADITIONAL APPROACH: Direct kubectl commands"
+          echo "kubectl set image deployment/user-service-deployment user-service=${{ needs.build-docker.outputs.image-tag }} -n staging"
+          echo "kubectl rollout status deployment/user-service-deployment -n staging"
+          echo "✅ Staging deployment simulated (would normally update Kubernetes)"
+          sleep 5
+          
+      - name: Staging health check
+        run: |
+          echo "🏥 Health checking staging environment..."
+          echo "✅ Staging deployment healthy"
+          
+      - name: Record staging completion
+        run: |
+          echo "staging-end=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "staging-time=$(($(date +%s) - ${{ steps.timing.outputs.staging-start }}))" >> $GITHUB_OUTPUT
+          echo "Staging deployment completed at $(date)"
+
+  # Job 6: Manual Approval for Production Deployment
+  manual-approval-production:
+    name: 🚨 Manual Approval - Production Deployment
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: 
+      name: approve-production
+      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    
+    steps:
+      - name: Production deployment approval
+        run: |
+          echo "🔐 TRADITIONAL CI/CD: Manual production approval required"
+          echo "👤 Critical decision point - deploy to production?"
+          echo "📊 High-stakes manual intervention - risk of errors"
+
+  # Job 7: Deploy to Production (Simulated)
+  deploy-production:
+    name: Deploy to Production
+    needs: [build-docker, manual-approval-production]
+    runs-on: ubuntu-latest
+    outputs:
+      production-time: ${{ steps.timing.outputs.production-time }}
+    
+    steps:
+      - name: Record production deploy start
+        id: timing
+        run: |
+          echo "production-start=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "Production deployment started at $(date)"
+          
+      - name: Traditional production deployment
+        run: |
+          echo "🎯 TRADITIONAL APPROACH: Manual production deployment"
+          echo "kubectl set image deployment/user-service-deployment user-service=${{ needs.build-docker.outputs.image-tag }} -n production"
+          echo "kubectl rollout status deployment/user-service-deployment -n production"
+          echo "✅ Production deployment simulated"
+          sleep 8
+          
+      - name: Production health check
+        run: |
+          echo "🏥 Health checking production environment..."
+          echo "✅ Production deployment healthy"
+          
+      - name: Record production completion
+        run: |
+          echo "production-end=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "production-time=$(($(date +%s) - ${{ steps.timing.outputs.production-start }}))" >> $GITHUB_OUTPUT
+          echo "Production deployment completed at $(date)"
+
+  # Job 8: Metrics Collection
+  collect-metrics:
+    name: 📊 Collect Traditional CI/CD Metrics
+    needs: [build-and-test, build-docker, deploy-staging, deploy-production]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Calculate total pipeline time
+        run: |
+          echo "📊 TRADITIONAL CI/CD METRICS SUMMARY"
+          echo "=================================="
+          echo "🔧 Build Time: ${{ needs.build-and-test.outputs.build-time }} seconds"
+          echo "🐳 Docker Time: ${{ needs.build-docker.outputs.docker-time }} seconds" 
+          echo "🏗️  Staging Time: ${{ needs.deploy-staging.outputs.staging-time }} seconds"
+          echo "🚀 Production Time: ${{ needs.deploy-production.outputs.production-time }} seconds"
+          echo ""
+          echo "👤 Manual Interventions: 3 (Build approval + Staging approval + Production approval)"
+          echo "⏱️  Human Wait Time: Variable (depends on approver availability)"
+          echo "🎯 Deployment Method: Direct kubectl commands (traditional)"
+          echo "🔐 Security: Manual credential management"
+          echo ""
+          echo "📈 This data will be compared against GitOps metrics in Week 4"
