@@ -56,7 +56,8 @@ async def health_check():
             "admin-dashboard",
             "password-reset",
             "email-verification"
-        ]
+        ],
+        "message": "E-Commerce User Service with Authentication, Password Reset & Email Verification"
     }
 
 @app.get("/")

@@ -1,4 +1,4 @@
-name: User Service - Traditional CI/CD (Enhanced Metrics)
+name: User Service - Traditional CI/CD (Local Minikube)
 
 on:
   push:
@@ -18,15 +18,12 @@ on:
 env:
   IMAGE_NAME: kousaila/user-service
   SERVICE_PATH: users-cna-microservice
-  PROJECT_ID: tensile-stack-466319-d8
-  CLUSTER_NAME: ecommerce-thesis
-  CLUSTER_ZONE: northamerica-northeast1-a
 
 jobs:
   # Job 1: Build and Test
   build-and-test:
     name: Build and Test
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       build-time: ${{ steps.timing.outputs.build-time }}
       build-start: ${{ steps.timing.outputs.build-start }}
@@ -74,7 +71,7 @@ jobs:
   manual-approval-build:
     name: 🚨 Manual Approval - Docker Build
     needs: build-and-test
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       approval-start: ${{ steps.timing.outputs.approval-start }}
       approval-end: ${{ steps.timing.outputs.approval-end }}
@@ -109,7 +106,7 @@ jobs:
   build-docker:
     name: Build and Push Docker Image
     needs: [build-and-test, manual-approval-build]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
       docker-time: ${{ steps.timing.outputs.docker-time }}
@@ -173,7 +170,7 @@ jobs:
   manual-approval-staging:
     name: 🚨 Manual Approval - Staging (2min wait)
     needs: build-docker
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       staging-approval-start: ${{ steps.timing.outputs.staging-approval-start }}
       staging-approval-end: ${{ steps.timing.outputs.staging-approval-end }}
@@ -208,7 +205,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     needs: [build-docker, manual-approval-staging]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       staging-time: ${{ steps.timing.outputs.staging-time }}
       staging-start: ${{ steps.timing.outputs.staging-start }}
@@ -217,26 +214,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          install_components: 'gke-gcloud-auth-plugin'
-
-      - name: Configure kubectl
-        run: |
-          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} \
-            --zone ${{ env.CLUSTER_ZONE }} \
-            --project ${{ env.PROJECT_ID }}
-          
-      - name: Set auth plugin environment
-        run: |
-          echo "USE_GKE_GCLOUD_AUTH_PLUGIN=True" >> $GITHUB_ENV
 
       - name: Record staging deploy start
         id: timing
@@ -247,11 +224,10 @@ jobs:
           
       - name: Deploy to staging namespace
         run: |
-          echo "🎯 TRADITIONAL APPROACH: Real kubectl deployment"
+          echo "🎯 TRADITIONAL APPROACH: Real kubectl deployment to local cluster"
           kubectl create namespace staging --dry-run=client -o yaml | kubectl apply -f -
           kubectl apply -f k8s/user-service-deployment.yaml -n staging
-          kubectl set image deployment/user-service-deployment user-service=kousaila/user-service:latest -n staging
-          kubectl rollout status deployment/user-service-deployment -n staging --timeout=300s
+          kubectl set image deployment/user-service-deployment user-service=${{ needs.build-docker.outputs.image-tag }} -n staging
           kubectl rollout status deployment/user-service-deployment -n staging --timeout=300s
           echo "✅ Real staging deployment completed"
           
@@ -275,7 +251,7 @@ jobs:
   manual-approval-production:
     name: 🚨 Manual Approval - Production (5min wait)
     needs: deploy-staging
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       prod-approval-start: ${{ steps.timing.outputs.prod-approval-start }}
       prod-approval-end: ${{ steps.timing.outputs.prod-approval-end }}
@@ -310,7 +286,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     needs: [build-docker, manual-approval-production]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       production-time: ${{ steps.timing.outputs.production-time }}
       production-start: ${{ steps.timing.outputs.production-start }}
@@ -319,26 +295,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          install_components: 'gke-gcloud-auth-plugin'
-
-      - name: Configure kubectl
-        run: |
-          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} \
-            --zone ${{ env.CLUSTER_ZONE }} \
-            --project ${{ env.PROJECT_ID }}
-          
-      - name: Set auth plugin environment
-        run: |
-          echo "USE_GKE_GCLOUD_AUTH_PLUGIN=True" >> $GITHUB_ENV
 
       - name: Record production deploy start
         id: timing
@@ -349,9 +305,9 @@ jobs:
           
       - name: Deploy to production (default namespace)
         run: |
-          echo "🎯 TRADITIONAL APPROACH: Real production deployment"
+          echo "🎯 TRADITIONAL APPROACH: Real production deployment to local cluster"
           kubectl apply -f k8s/user-service-deployment.yaml
-          kubectl set image deployment/user-service-deployment user-service=kousaila/user-service:latest
+          kubectl set image deployment/user-service-deployment user-service=${{ needs.build-docker.outputs.image-tag }}
           kubectl rollout status deployment/user-service-deployment --timeout=300s
           echo "✅ Real production deployment completed"
           
@@ -375,7 +331,7 @@ jobs:
   collect-metrics:
     name: 📊 Traditional CI/CD Metrics
     needs: [build-and-test, manual-approval-build, build-docker, manual-approval-staging, deploy-staging, manual-approval-production, deploy-production]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: always()
     
     steps:
@@ -389,5 +345,5 @@ jobs:
           echo "🏗️ Staging Time: ${{ needs.deploy-staging.outputs.staging-time }} seconds"
           echo "🚀 Production Time: ${{ needs.deploy-production.outputs.production-time }} seconds"
           echo "🚨 Manual Interventions: 3"
-          echo "📊 Deployment Method: Traditional kubectl"
+          echo "📊 Deployment Method: Traditional kubectl to Local Minikube"
           echo "🎯 This data will be compared against GitOps metrics in Week 4"
