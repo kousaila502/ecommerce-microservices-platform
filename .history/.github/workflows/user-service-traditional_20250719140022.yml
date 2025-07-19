@@ -350,8 +350,9 @@ jobs:
       - name: Deploy to production (default namespace)
         run: |
           echo "🎯 TRADITIONAL APPROACH: Real production deployment"
-          kubectl apply -f k8s/user-service-deployment.yaml
-          kubectl set image deployment/user-service-deployment user-service=kousaila/user-service:latest
+          kubectl apply -f k8s/user-service-deployment.yaml -n staging
+kubectl set image deployment/user-service-deployment user-service=kousaila/user-service:latest -n staging
+kubectl rollout status deployment/user-service-deployment -n staging --timeout=300s
           kubectl rollout status deployment/user-service-deployment --timeout=300s
           echo "✅ Real production deployment completed"
           
