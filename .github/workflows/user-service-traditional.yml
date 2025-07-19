@@ -35,10 +35,11 @@ jobs:
         
       - name: Record build start time
         id: timing
+        shell: pwsh
         run: |
-          BUILD_START=$(date +%s)
-          echo "build-start=$BUILD_START" >> $GITHUB_OUTPUT
-          echo "🚀 BUILD PHASE STARTED at $(date -d @$BUILD_START)"
+          $BUILD_START = [int][double]::Parse((Get-Date -UFormat %s))
+          echo "build-start=$BUILD_START" >> $env:GITHUB_OUTPUT
+          echo "🚀 BUILD PHASE STARTED at $(Get-Date)"
           echo "⏱️ Build Start Timestamp: $BUILD_START"
           
       - name: Set up Python
@@ -47,24 +48,27 @@ jobs:
           python-version: '3.11'
           
       - name: Install dependencies
+        shell: pwsh
         run: |
           cd ${{ env.SERVICE_PATH }}
           pip install pipenv
           pipenv install --dev
           
       - name: Run basic health check
+        shell: pwsh
         run: |
           cd ${{ env.SERVICE_PATH }}
           echo "✅ Code syntax check passed"
           echo "⚠️  No comprehensive tests available (traditional approach)"
           
       - name: Record build completion
+        shell: pwsh
         run: |
-          BUILD_END=$(date +%s)
-          BUILD_TIME=$((BUILD_END - ${{ steps.timing.outputs.build-start }}))
-          echo "build-end=$BUILD_END" >> $GITHUB_OUTPUT
-          echo "build-time=$BUILD_TIME" >> $GITHUB_OUTPUT
-          echo "✅ BUILD PHASE COMPLETED at $(date -d @$BUILD_END)"
+          $BUILD_END = [int][double]::Parse((Get-Date -UFormat %s))
+          $BUILD_TIME = $BUILD_END - ${{ steps.timing.outputs.build-start }}
+          echo "build-end=$BUILD_END" >> $env:GITHUB_OUTPUT
+          echo "build-time=$BUILD_TIME" >> $env:GITHUB_OUTPUT
+          echo "✅ BUILD PHASE COMPLETED at $(Get-Date)"
           echo "⏱️ Build Duration: $BUILD_TIME seconds"
 
   # Job 2: Manual Approval for Docker Build
@@ -82,24 +86,27 @@ jobs:
     steps:
       - name: Record approval start time
         id: timing
+        shell: pwsh
         run: |
-          APPROVAL_START=$(date +%s)
-          echo "approval-start=$APPROVAL_START" >> $GITHUB_OUTPUT
-          echo "🔐 MANUAL APPROVAL #1 REQUESTED at $(date -d @$APPROVAL_START)"
+          $APPROVAL_START = [int][double]::Parse((Get-Date -UFormat %s))
+          echo "approval-start=$APPROVAL_START" >> $env:GITHUB_OUTPUT
+          echo "🔐 MANUAL APPROVAL #1 REQUESTED at $(Get-Date)"
           echo "⏱️ Approval Start Timestamp: $APPROVAL_START"
           
       - name: Manual approval checkpoint
+        shell: pwsh
         run: |
           echo "🔐 TRADITIONAL CI/CD: Manual approval required"
           echo "⏱️ Human intervention needed - waiting for approval..."
           echo "📊 This creates deployment delays and requires human oversight"
           
       - name: Record approval completion
+        shell: pwsh
         run: |
-          APPROVAL_END=$(date +%s)
-          APPROVAL_TIME=$((APPROVAL_END - ${{ steps.timing.outputs.approval-start }}))
-          echo "approval-end=$APPROVAL_END" >> $GITHUB_OUTPUT
-          echo "✅ MANUAL APPROVAL #1 COMPLETED at $(date -d @$APPROVAL_END)"
+          $APPROVAL_END = [int][double]::Parse((Get-Date -UFormat %s))
+          $APPROVAL_TIME = $APPROVAL_END - ${{ steps.timing.outputs.approval-start }}
+          echo "approval-end=$APPROVAL_END" >> $env:GITHUB_OUTPUT
+          echo "✅ MANUAL APPROVAL #1 COMPLETED at $(Get-Date)"
           echo "⏱️ Human Wait Time: $APPROVAL_TIME seconds"
 
   # Job 3: Build and Push Docker Image
@@ -119,10 +126,11 @@ jobs:
         
       - name: Record Docker build start
         id: timing
+        shell: pwsh
         run: |
-          DOCKER_START=$(date +%s)
-          echo "docker-start=$DOCKER_START" >> $GITHUB_OUTPUT
-          echo "🐳 DOCKER BUILD STARTED at $(date -d @$DOCKER_START)"
+          $DOCKER_START = [int][double]::Parse((Get-Date -UFormat %s))
+          echo "docker-start=$DOCKER_START" >> $env:GITHUB_OUTPUT
+          echo "🐳 DOCKER BUILD STARTED at $(Get-Date)"
           echo "⏱️ Docker Start Timestamp: $DOCKER_START"
           
       - name: Set up Docker Buildx
@@ -157,12 +165,13 @@ jobs:
           cache-to: type=gha,mode=max
           
       - name: Record Docker completion
+        shell: pwsh
         run: |
-          DOCKER_END=$(date +%s)
-          DOCKER_TIME=$((DOCKER_END - ${{ steps.timing.outputs.docker-start }}))
-          echo "docker-end=$DOCKER_END" >> $GITHUB_OUTPUT
-          echo "docker-time=$DOCKER_TIME" >> $GITHUB_OUTPUT
-          echo "✅ DOCKER BUILD COMPLETED at $(date -d @$DOCKER_END)"
+          $DOCKER_END = [int][double]::Parse((Get-Date -UFormat %s))
+          $DOCKER_TIME = $DOCKER_END - ${{ steps.timing.outputs.docker-start }}
+          echo "docker-end=$DOCKER_END" >> $env:GITHUB_OUTPUT
+          echo "docker-time=$DOCKER_TIME" >> $env:GITHUB_OUTPUT
+          echo "✅ DOCKER BUILD COMPLETED at $(Get-Date)"
           echo "⏱️ Docker Duration: $DOCKER_TIME seconds"
           echo "🐳 Image pushed: ${{ steps.meta.outputs.tags }}"
 
@@ -181,24 +190,27 @@ jobs:
     steps:
       - name: Record staging approval start
         id: timing
+        shell: pwsh
         run: |
-          STAGING_APPROVAL_START=$(date +%s)
-          echo "staging-approval-start=$STAGING_APPROVAL_START" >> $GITHUB_OUTPUT
-          echo "🔐 MANUAL APPROVAL #2 REQUESTED at $(date -d @$STAGING_APPROVAL_START)"
+          $STAGING_APPROVAL_START = [int][double]::Parse((Get-Date -UFormat %s))
+          echo "staging-approval-start=$STAGING_APPROVAL_START" >> $env:GITHUB_OUTPUT
+          echo "🔐 MANUAL APPROVAL #2 REQUESTED at $(Get-Date)"
           echo "⏱️ Minimum wait time: 2 minutes (enforced)"
           
       - name: Staging deployment approval
+        shell: pwsh
         run: |
           echo "🔐 TRADITIONAL CI/CD: Manual staging approval required"
           echo "👤 Human decision point - deploy to staging?"
           echo "📊 This adds latency and potential for human error"
           
       - name: Record staging approval completion
+        shell: pwsh
         run: |
-          STAGING_APPROVAL_END=$(date +%s)
-          STAGING_APPROVAL_TIME=$((STAGING_APPROVAL_END - ${{ steps.timing.outputs.staging-approval-start }}))
-          echo "staging-approval-end=$STAGING_APPROVAL_END" >> $GITHUB_OUTPUT
-          echo "✅ MANUAL APPROVAL #2 COMPLETED at $(date -d @$STAGING_APPROVAL_END)"
+          $STAGING_APPROVAL_END = [int][double]::Parse((Get-Date -UFormat %s))
+          $STAGING_APPROVAL_TIME = $STAGING_APPROVAL_END - ${{ steps.timing.outputs.staging-approval-start }}
+          echo "staging-approval-end=$STAGING_APPROVAL_END" >> $env:GITHUB_OUTPUT
+          echo "✅ MANUAL APPROVAL #2 COMPLETED at $(Get-Date)"
           echo "⏱️ Staging Human Wait Time: $STAGING_APPROVAL_TIME seconds"
 
   # Job 5: Deploy to Staging
@@ -217,21 +229,24 @@ jobs:
 
       - name: Record staging deploy start
         id: timing
+        shell: pwsh
         run: |
-          STAGING_START=$(date +%s)
-          echo "staging-start=$STAGING_START" >> $GITHUB_OUTPUT
-          echo "🏗️ STAGING DEPLOYMENT STARTED at $(date -d @$STAGING_START)"
+          $STAGING_START = [int][double]::Parse((Get-Date -UFormat %s))
+          echo "staging-start=$STAGING_START" >> $env:GITHUB_OUTPUT
+          echo "🏗️ STAGING DEPLOYMENT STARTED at $(Get-Date)"
           
       - name: Deploy to staging namespace
+        shell: pwsh
         run: |
           echo "🎯 TRADITIONAL APPROACH: Real kubectl deployment to local cluster"
           kubectl create namespace staging --dry-run=client -o yaml | kubectl apply -f -
           kubectl apply -f k8s/user-service-deployment.yaml -n staging
-          kubectl set image deployment/user-service-deployment user-service=${{ needs.build-docker.outputs.image-tag }} -n staging
+          kubectl set image deployment/user-service-deployment user-service="${{ needs.build-docker.outputs.image-tag }}" -n staging
           kubectl rollout status deployment/user-service-deployment -n staging --timeout=300s
           echo "✅ Real staging deployment completed"
           
       - name: Staging health check
+        shell: pwsh
         run: |
           echo "🏥 Health checking staging environment..."
           kubectl get pods -n staging
@@ -239,12 +254,13 @@ jobs:
           echo "✅ Staging deployment healthy"
           
       - name: Record staging completion
+        shell: pwsh
         run: |
-          STAGING_END=$(date +%s)
-          STAGING_TIME=$((STAGING_END - ${{ steps.timing.outputs.staging-start }}))
-          echo "staging-end=$STAGING_END" >> $GITHUB_OUTPUT
-          echo "staging-time=$STAGING_TIME" >> $GITHUB_OUTPUT
-          echo "✅ STAGING DEPLOYMENT COMPLETED at $(date -d @$STAGING_END)"
+          $STAGING_END = [int][double]::Parse((Get-Date -UFormat %s))
+          $STAGING_TIME = $STAGING_END - ${{ steps.timing.outputs.staging-start }}
+          echo "staging-end=$STAGING_END" >> $env:GITHUB_OUTPUT
+          echo "staging-time=$STAGING_TIME" >> $env:GITHUB_OUTPUT
+          echo "✅ STAGING DEPLOYMENT COMPLETED at $(Get-Date)"
           echo "⏱️ Staging Duration: $STAGING_TIME seconds"
 
   # Job 6: Manual Approval for Production
@@ -262,24 +278,27 @@ jobs:
     steps:
       - name: Record production approval start
         id: timing
+        shell: pwsh
         run: |
-          PROD_APPROVAL_START=$(date +%s)
-          echo "prod-approval-start=$PROD_APPROVAL_START" >> $GITHUB_OUTPUT
-          echo "🔐 MANUAL APPROVAL #3 REQUESTED at $(date -d @$PROD_APPROVAL_START)"
+          $PROD_APPROVAL_START = [int][double]::Parse((Get-Date -UFormat %s))
+          echo "prod-approval-start=$PROD_APPROVAL_START" >> $env:GITHUB_OUTPUT
+          echo "🔐 MANUAL APPROVAL #3 REQUESTED at $(Get-Date)"
           echo "⏱️ Minimum wait time: 5 minutes (enforced)"
           
       - name: Production deployment approval
+        shell: pwsh
         run: |
           echo "🔐 TRADITIONAL CI/CD: Manual production approval required"
           echo "👤 Critical decision point - deploy to production?"
           echo "📊 High-stakes manual intervention - risk of errors"
           
       - name: Record production approval completion
+        shell: pwsh
         run: |
-          PROD_APPROVAL_END=$(date +%s)
-          PROD_APPROVAL_TIME=$((PROD_APPROVAL_END - ${{ steps.timing.outputs.prod-approval-start }}))
-          echo "prod-approval-end=$PROD_APPROVAL_END" >> $GITHUB_OUTPUT
-          echo "✅ MANUAL APPROVAL #3 COMPLETED at $(date -d @$PROD_APPROVAL_END)"
+          $PROD_APPROVAL_END = [int][double]::Parse((Get-Date -UFormat %s))
+          $PROD_APPROVAL_TIME = $PROD_APPROVAL_END - ${{ steps.timing.outputs.prod-approval-start }}
+          echo "prod-approval-end=$PROD_APPROVAL_END" >> $env:GITHUB_OUTPUT
+          echo "✅ MANUAL APPROVAL #3 COMPLETED at $(Get-Date)"
           echo "⏱️ Production Human Wait Time: $PROD_APPROVAL_TIME seconds"
 
   # Job 7: Deploy to Production
@@ -298,20 +317,23 @@ jobs:
 
       - name: Record production deploy start
         id: timing
+        shell: pwsh
         run: |
-          PRODUCTION_START=$(date +%s)
-          echo "production-start=$PRODUCTION_START" >> $GITHUB_OUTPUT
-          echo "🚀 PRODUCTION DEPLOYMENT STARTED at $(date -d @$PRODUCTION_START)"
+          $PRODUCTION_START = [int][double]::Parse((Get-Date -UFormat %s))
+          echo "production-start=$PRODUCTION_START" >> $env:GITHUB_OUTPUT
+          echo "🚀 PRODUCTION DEPLOYMENT STARTED at $(Get-Date)"
           
       - name: Deploy to production (default namespace)
+        shell: pwsh
         run: |
           echo "🎯 TRADITIONAL APPROACH: Real production deployment to local cluster"
           kubectl apply -f k8s/user-service-deployment.yaml
-          kubectl set image deployment/user-service-deployment user-service=${{ needs.build-docker.outputs.image-tag }}
+          kubectl set image deployment/user-service-deployment user-service="${{ needs.build-docker.outputs.image-tag }}"
           kubectl rollout status deployment/user-service-deployment --timeout=300s
           echo "✅ Real production deployment completed"
           
       - name: Production health check
+        shell: pwsh
         run: |
           echo "🏥 Health checking production environment..."
           kubectl get pods
@@ -319,12 +341,13 @@ jobs:
           echo "✅ Production deployment healthy"
           
       - name: Record production completion
+        shell: pwsh
         run: |
-          PRODUCTION_END=$(date +%s)
-          PRODUCTION_TIME=$((PRODUCTION_END - ${{ steps.timing.outputs.production-start }}))
-          echo "production-end=$PRODUCTION_END" >> $GITHUB_OUTPUT
-          echo "production-time=$PRODUCTION_TIME" >> $GITHUB_OUTPUT
-          echo "✅ PRODUCTION DEPLOYMENT COMPLETED at $(date -d @$PRODUCTION_END)"
+          $PRODUCTION_END = [int][double]::Parse((Get-Date -UFormat %s))
+          $PRODUCTION_TIME = $PRODUCTION_END - ${{ steps.timing.outputs.production-start }}
+          echo "production-end=$PRODUCTION_END" >> $env:GITHUB_OUTPUT
+          echo "production-time=$PRODUCTION_TIME" >> $env:GITHUB_OUTPUT
+          echo "✅ PRODUCTION DEPLOYMENT COMPLETED at $(Get-Date)"
           echo "⏱️ Production Duration: $PRODUCTION_TIME seconds"
           
   # Job 8: Comprehensive Metrics Collection
@@ -336,10 +359,11 @@ jobs:
     
     steps:
       - name: Display metrics
+        shell: pwsh
         run: |
           echo "📊 TRADITIONAL CI/CD METRICS SUMMARY"
           echo "=================================="
-          echo "📅 Test Date: $(date)"
+          echo "📅 Test Date: $(Get-Date)"
           echo "🔧 Build Time: ${{ needs.build-and-test.outputs.build-time }} seconds"
           echo "🐳 Docker Time: ${{ needs.build-docker.outputs.docker-time }} seconds"
           echo "🏗️ Staging Time: ${{ needs.deploy-staging.outputs.staging-time }} seconds"

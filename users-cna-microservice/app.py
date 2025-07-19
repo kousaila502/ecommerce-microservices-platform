@@ -57,7 +57,7 @@ async def health_check():
             "password-reset",
             "email-verification"
         ],
-        "message": "E-Commerce User Service with Authentication, Password Reset & Email Verification Good to Go!"
+        "message": "E-Commerce User Service with Authentication, Password Reset & Email Verification Good to Goo!"
     }
 
 @app.get("/")
