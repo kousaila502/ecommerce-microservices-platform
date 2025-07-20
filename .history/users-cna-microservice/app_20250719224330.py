@@ -49,7 +49,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "user-service",
-        "version": "3.0",
+        "version": "2.2.0",
         "features": [
             "authentication",
             "user-management", 
@@ -57,7 +57,7 @@ async def health_check():
             "password-reset",
             "email-verification"
         ],
-        "message": "E-Commerce User Service with Authentication, Password Reset & Email Verification Good to Go!!!"
+        "message": "E-Commerce User Service with Authentication, Password Reset & Email Verification Goo"
     }
 
 @app.get("/")
