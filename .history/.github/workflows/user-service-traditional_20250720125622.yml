@@ -291,7 +291,7 @@ jobs:
         run: |
           echo 🎯 TRADITIONAL APPROACH: Real production deployment to local cluster
           kubectl apply -f k8s/user-service-deployment.yaml
-          kubectl set image deployment/user-service-deployment user-service=${{ needs.build-docker.outputs.image-tag }}
+          kubectl set image deployment/user-service-deployment user-service=kousaila/user-service:latest
           kubectl rollout status deployment/user-service-deployment --timeout=300s
           echo ✅ Real production deployment completed
           
