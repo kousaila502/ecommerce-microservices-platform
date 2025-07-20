@@ -105,40 +105,37 @@ jobs:
     needs: [build-and-test, manual-approval-build]
     runs-on: ubuntu-latest
     outputs:
-      image-tag: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}
+      image-tag: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ github.sha }}
       docker-start: ${{ steps.timing.outputs.docker-start }}
       docker-end: ${{ steps.timing.outputs.docker-end }}
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        
       - name: Record Docker build start
         id: timing
         run: |
           echo "docker-start=$(date +%s)" >> $GITHUB_OUTPUT
           echo "🐳 DOCKER BUILD STARTED at $(date)"
-
-      - name: Set short SHA
-        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
+          
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
+        
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
+          
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=traditional-cicd-${{ env.SHORT_SHA }}
-
+            type=sha,prefix=traditional-cicd-
+            
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -149,12 +146,12 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
+          
       - name: Record Docker completion
         run: |
           echo "docker-end=$(date +%s)" >> $GITHUB_OUTPUT
           echo "✅ DOCKER BUILD COMPLETED at $(date)"
-          echo "🐳 Image pushed: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}"
+          echo "🐳 Image pushed: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ github.sha }}"
 
   # Job 4: Manual Approval for Staging
   manual-approval-staging:
@@ -167,7 +164,7 @@ jobs:
     environment: 
       name: approve-staging
       url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
+    
     steps:
       - name: Record staging approval start
         id: timing
@@ -175,14 +172,14 @@ jobs:
         run: |
           echo staging-approval-start=%time% >> %GITHUB_OUTPUT%
           echo 🔐 MANUAL APPROVAL #2 REQUESTED at %date% %time%
-
+          
       - name: Staging deployment approval
         shell: cmd
         run: |
           echo 🔐 TRADITIONAL CI/CD: Manual staging approval required
           echo 👤 Human decision point - deploy to staging?
           echo 📊 This adds latency and potential for human error
-
+          
       - name: Record staging approval completion
         shell: cmd
         run: |
@@ -197,7 +194,7 @@ jobs:
     outputs:
       staging-start: ${{ steps.timing.outputs.staging-start }}
       staging-end: ${{ steps.timing.outputs.staging-end }}
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -208,18 +205,18 @@ jobs:
         run: |
           echo staging-start=%time% >> %GITHUB_OUTPUT%
           echo 🏗️ STAGING DEPLOYMENT STARTED at %date% %time%
-
+          
       - name: Deploy to staging namespace
         shell: cmd
         run: |
           echo 🎯 TRADITIONAL APPROACH: Real kubectl deployment to local cluster
-          echo 🐳 Using image: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}
+          echo 🐳 Using image: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ github.sha }}
           kubectl create namespace staging --dry-run=client -o yaml | kubectl apply -f -
           kubectl apply -f k8s/user-service-deployment.yaml -n staging
-          kubectl set image deployment/user-service-deployment user-service=${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }} -n staging
+          kubectl set image deployment/user-service-deployment user-service=${{ env.IMAGE_NAME }}:traditional-cicd-${{ github.sha }} -n staging
           kubectl rollout status deployment/user-service-deployment -n staging --timeout=300s
           echo ✅ Real staging deployment completed
-
+          
       - name: Staging health check
         shell: cmd
         run: |
@@ -227,7 +224,7 @@ jobs:
           kubectl get pods -n staging
           kubectl wait --for=condition=ready pod -l app=user-service -n staging --timeout=120s
           echo ✅ Staging deployment healthy
-
+          
       - name: Record staging completion
         shell: cmd
         run: |
@@ -245,7 +242,7 @@ jobs:
     environment: 
       name: approve-production
       url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
+    
     steps:
       - name: Record production approval start
         id: timing
@@ -253,14 +250,14 @@ jobs:
         run: |
           echo prod-approval-start=%time% >> %GITHUB_OUTPUT%
           echo 🔐 MANUAL APPROVAL #3 REQUESTED at %date% %time%
-
+          
       - name: Production deployment approval
         shell: cmd
         run: |
           echo 🔐 TRADITIONAL CI/CD: Manual production approval required
           echo 👤 Critical decision point - deploy to production?
           echo 📊 High-stakes manual intervention - risk of errors
-
+          
       - name: Record production approval completion
         shell: cmd
         run: |
@@ -275,7 +272,7 @@ jobs:
     outputs:
       production-start: ${{ steps.timing.outputs.production-start }}
       production-end: ${{ steps.timing.outputs.production-end }}
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -286,17 +283,17 @@ jobs:
         run: |
           echo production-start=%time% >> %GITHUB_OUTPUT%
           echo 🚀 PRODUCTION DEPLOYMENT STARTED at %date% %time%
-
+          
       - name: Deploy to production (default namespace)
         shell: cmd
         run: |
           echo 🎯 TRADITIONAL APPROACH: Real production deployment to local cluster
-          echo 🐳 Using image: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}
+          echo 🐳 Using image: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ github.sha }}
           kubectl apply -f k8s/user-service-deployment.yaml
-          kubectl set image deployment/user-service-deployment user-service=${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}
+          kubectl set image deployment/user-service-deployment user-service=${{ env.IMAGE_NAME }}:traditional-cicd-${{ github.sha }}
           kubectl rollout status deployment/user-service-deployment --timeout=300s
           echo ✅ Real production deployment completed
-
+          
       - name: Production health check
         shell: cmd
         run: |
@@ -304,9 +301,35 @@ jobs:
           kubectl get pods
           kubectl wait --for=condition=ready pod -l app=user-service --timeout=120s
           echo ✅ Production deployment healthy
-
+          
       - name: Record production completion
         shell: cmd
         run: |
           echo production-end=%time% >> %GITHUB_OUTPUT%
           echo ✅ PRODUCTION DEPLOYMENT COMPLETED at %date% %time%
+          
+  # Job 8: Comprehensive Metrics Collection
+  collect-metrics:
+    name: 📊 Traditional CI/CD Metrics
+    needs: [build-and-test, manual-approval-build, build-docker, manual-approval-staging, deploy-staging, manual-approval-production, deploy-production]
+    runs-on: self-hosted
+    if: always()
+    
+    steps:
+      - name: Display metrics
+        shell: cmd
+        run: |
+          echo 📊 TRADITIONAL CI/CD METRICS SUMMARY
+          echo ==================================
+          echo 📅 Test Date: %date% %time%
+          echo 🔧 Build Started: ${{ needs.build-and-test.outputs.build-start }}
+          echo 🔧 Build Ended: ${{ needs.build-and-test.outputs.build-end }}
+          echo 🐳 Docker Started: ${{ needs.build-docker.outputs.docker-start }}
+          echo 🐳 Docker Ended: ${{ needs.build-docker.outputs.docker-end }}
+          echo 🏗️ Staging Started: ${{ needs.deploy-staging.outputs.staging-start }}
+          echo 🏗️ Staging Ended: ${{ needs.deploy-staging.outputs.staging-end }}
+          echo 🚀 Production Started: ${{ needs.deploy-production.outputs.production-start }}
+          echo 🚀 Production Ended: ${{ needs.deploy-production.outputs.production-end }}
+          echo 🚨 Manual Interventions: 3
+          echo 📊 Deployment Method: Traditional kubectl to Local Minikube
+          echo 🎯 This data will be compared against GitOps metrics in Week 4
