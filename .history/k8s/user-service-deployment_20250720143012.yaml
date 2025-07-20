@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: user-service
-        image: kousaila/user-service:traditional-cicd-to-be-overwritten
+        image: image: kousaila/user-service:traditional-cicd-to-be-overwritten
         imagePullPolicy: Always
         env:
         - name: DATABASE_URL
