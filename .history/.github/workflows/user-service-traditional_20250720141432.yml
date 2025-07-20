@@ -20,6 +20,7 @@ env:
   SERVICE_PATH: users-cna-microservice
 
 jobs:
+  # Job 1: Build and Test
   build-and-test:
     name: Build and Test
     runs-on: self-hosted
@@ -62,7 +63,9 @@ jobs:
         run: |
           echo build-end=%time% >> %GITHUB_OUTPUT%
           echo ✅ BUILD PHASE COMPLETED at %date% %time%
+          echo ⏱️ Build Duration: Manual calculation needed
 
+  # Job 2: Manual Approval for Docker Build
   manual-approval-build:
     name: 🚨 Manual Approval - Docker Build
     needs: build-and-test
@@ -70,7 +73,7 @@ jobs:
     outputs:
       approval-start: ${{ steps.timing.outputs.approval-start }}
       approval-end: ${{ steps.timing.outputs.approval-end }}
-    environment:
+    environment: 
       name: approve-build
       url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
@@ -87,23 +90,35 @@ jobs:
         run: |
           echo 🔐 TRADITIONAL CI/CD: Manual approval required
           echo ⏱️ Human intervention needed - waiting for approval...
+          echo 📊 This creates deployment delays and requires human oversight
 
       - name: Record approval completion
         shell: cmd
         run: |
           echo approval-end=%time% >> %GITHUB_OUTPUT%
           echo ✅ MANUAL APPROVAL #1 COMPLETED at %date% %time%
+          echo ⏱️ Human Wait Time: Calculate from logs
 
+  # Job 3: Build and Push Docker Image
   build-docker:
     name: Build and Push Docker Image
     needs: [build-and-test, manual-approval-build]
     runs-on: ubuntu-latest
     outputs:
+      image-tag: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}
+      docker-start: ${{ steps.timing.outputs.docker-start }}
+      docker-end: ${{ steps.timing.outputs.docker-end }}
       short-sha: ${{ env.SHORT_SHA }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Record Docker build start
+        id: timing
+        run: |
+          echo "docker-start=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "🐳 DOCKER BUILD STARTED at $(date)"
 
       - name: Set short SHA
         run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
@@ -133,27 +148,22 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-  manual-approval-staging:
-    name: 🚨 Manual Approval - Staging
-    needs: build-docker
-    runs-on: self-hosted
-    environment:
-      name: approve-staging
-      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      - name: Record Docker completion
+        run: |
+          echo "docker-end=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "✅ DOCKER BUILD COMPLETED at $(date)"
+          echo "🐳 Image pushed: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}"
 
-    steps:
-      - name: Manual approval staging
-        shell: cmd
-        run: echo 🛑 Waiting for staging approval...
-
+  # Update deploy-staging job with SHORT_SHA passed from build-docker
   deploy-staging:
     name: Deploy to Staging
-    needs: [build-docker, manual-approval-staging]
+    needs: [build-docker, manual-approval-build]
     runs-on: self-hosted
     env:
       SHORT_SHA: ${{ needs.build-docker.outputs.short-sha }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -161,32 +171,20 @@ jobs:
       - name: Deploy to staging
         shell: cmd
         run: |
-          echo Deploying image: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}
+          echo 🎯 TRADITIONAL APPROACH: Real kubectl deployment to local cluster
+          echo 🐳 Using image: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}
           kubectl create namespace staging --dry-run=client -o yaml | kubectl apply -f -
           kubectl apply -f k8s/user-service-deployment.yaml -n staging
           kubectl set image deployment/user-service-deployment user-service=${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }} -n staging
           kubectl rollout status deployment/user-service-deployment -n staging --timeout=300s
 
-  manual-approval-production:
-    name: 🚨 Manual Approval - Production
-    needs: deploy-staging
-    runs-on: self-hosted
-    environment:
-      name: approve-production
-      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-    steps:
-      - name: Manual approval production
-        shell: cmd
-        run: echo 🛑 Waiting for production approval...
-
+  # Update deploy-production job with SHORT_SHA passed from build-docker
   deploy-production:
     name: Deploy to Production
-    needs: [build-docker, manual-approval-production]
+    needs: [build-docker, manual-approval-build]
     runs-on: self-hosted
     env:
       SHORT_SHA: ${{ needs.build-docker.outputs.short-sha }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -194,18 +192,8 @@ jobs:
       - name: Deploy to production
         shell: cmd
         run: |
-          echo Deploying image: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}
+          echo 🎯 TRADITIONAL APPROACH: Real production deployment to local cluster
+          echo 🐳 Using image: ${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}
           kubectl apply -f k8s/user-service-deployment.yaml
           kubectl set image deployment/user-service-deployment user-service=${{ env.IMAGE_NAME }}:traditional-cicd-${{ env.SHORT_SHA }}
           kubectl rollout status deployment/user-service-deployment --timeout=300s
-
-  collect-metrics:
-    name: 📊 Traditional CI/CD Metrics
-    needs: [build-and-test, manual-approval-build, build-docker, manual-approval-staging, deploy-staging, manual-approval-production, deploy-production]
-    runs-on: self-hosted
-    if: always()
-
-    steps:
-      - name: Display metrics
-        shell: cmd
-        run: echo CI/CD pipeline completed
