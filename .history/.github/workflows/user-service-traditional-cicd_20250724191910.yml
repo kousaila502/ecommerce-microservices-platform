@@ -3,29 +3,29 @@ name: User Service - Enhanced Traditional CI/CD with Deep Analytics
 on:
   push:
     paths:
-      - "users-cna-microservice/**"
+      - 'users-cna-microservice/**'
   workflow_dispatch:
     inputs:
       environment:
-        description: "Deployment environment"
+        description: 'Deployment environment'
         required: true
-        default: "staging"
+        default: 'staging'
         type: choice
         options:
-          - staging
-          - production
+        - staging
+        - production
       failure_simulation:
-        description: "Simulate failure scenario for research"
+        description: 'Simulate failure scenario for research'
         required: false
-        default: "none"
+        default: 'none'
         type: choice
         options:
-          - none
-          - build_failure
-          - test_failure
-          - security_failure
-          - deployment_failure
-          - resource_exhaustion
+        - none
+        - build_failure
+        - test_failure
+        - security_failure
+        - deployment_failure
+        - resource_exhaustion
 
 env:
   IMAGE_NAME: kousaila/user-service
@@ -44,7 +44,7 @@ jobs:
       pipeline-id: ${{ steps.setup.outputs.pipeline-id }}
       start-timestamp: ${{ steps.setup.outputs.start-timestamp }}
       commit-sha: ${{ steps.setup.outputs.commit-sha }}
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -69,23 +69,11 @@ jobs:
           echo Failure Simulation: ${{ github.event.inputs.failure_simulation || 'none' }}
 
       - name: Push pipeline start metrics to Prometheus
+        if: runner.name == 'self-hosted'
         shell: cmd
         run: |
-          echo ========================================
-          echo 📊 PUSHING PIPELINE START METRICS
-          echo ========================================
-          echo Pipeline ID: %PIPELINE_ID%
-          echo Start Time: %START_TIME%
-          echo.
-
-          REM Push pipeline start metrics with error handling
-          echo 📤 Pushing pipeline start timestamp...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_pipeline_start_timestamp %date:~10,4%%date:~4,2%%date:~7,2%%time:~0,2%%time:~3,2%%time:~6,2%" && echo ✅ Start timestamp pushed || echo ❌ Start timestamp failed
-
-          echo 📤 Pushing pipeline info...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_pipeline_info{pipeline_type=\"traditional\",commit=\"%GITHUB_SHA:~0,7%\",branch=\"%GITHUB_REF_NAME%\"} 1" && echo ✅ Pipeline info pushed || echo ❌ Pipeline info failed
-
-          echo ========================================
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_pipeline_start_timestamp %date:~10,4%%date:~4,2%%date:~7,2%%time:~0,2%%time:~3,2%%time:~6,2%"
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_pipeline_info{pipeline_id=\"%PIPELINE_ID%\",commit=\"%GITHUB_SHA:~0,7%\",branch=\"%GITHUB_REF_NAME%\",event=\"%GITHUB_EVENT_NAME%\"} 1"
 
   # =============================================================================
   # SOURCE CODE ANALYSIS & COMPLEXITY METRICS
@@ -98,7 +86,7 @@ jobs:
       analysis-duration: ${{ steps.analysis.outputs.duration }}
       code-complexity: ${{ steps.analysis.outputs.complexity }}
       lines-of-code: ${{ steps.analysis.outputs.lines-of-code }}
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -113,24 +101,24 @@ jobs:
         run: |
           cd ${{ env.SERVICE_PATH }}
           echo 📊 ANALYZING SOURCE CODE COMPLEXITY...
-
+          
           REM Count Python files
           set PYTHON_FILES=0
           for /r %%i in (*.py) do set /a PYTHON_FILES+=1
-
+          
           REM Count total lines of code (rough estimate)
           set TOTAL_LINES=0
           for /r %%i in (*.py) do (
             for /f %%j in ('type "%%i" ^| find /c /v ""') do set /a TOTAL_LINES+=%%j
           )
-
+          
           REM Calculate complexity score (files * average lines)
           set /a COMPLEXITY_SCORE=PYTHON_FILES*100
-
+          
           echo Python Files: %PYTHON_FILES%
           echo Total Lines: %TOTAL_LINES%
           echo Complexity Score: %COMPLEXITY_SCORE%
-
+          
           echo lines-of-code=%TOTAL_LINES% >> %GITHUB_OUTPUT%
           echo complexity=%COMPLEXITY_SCORE% >> %GITHUB_OUTPUT%
 
@@ -148,7 +136,7 @@ jobs:
           echo ANALYSIS_END_TIME=%time% >> %GITHUB_ENV%
           set DURATION=45
           echo duration=%DURATION% >> %GITHUB_OUTPUT%
-
+          
           echo ========================================
           echo 📊 PUSHING SOURCE ANALYSIS METRICS  
           echo ========================================
@@ -156,17 +144,17 @@ jobs:
           echo Lines of Code: ${{ steps.analysis.outputs.lines-of-code }}
           echo Complexity Score: ${{ steps.analysis.outputs.complexity }}
           echo.
-
+          
           REM Push metrics to Prometheus with error handling
           echo 📤 Pushing analysis duration...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_analysis/instance/%PIPELINE_ID% -d "cicd_source_analysis_duration_seconds %DURATION%" && echo ✅ Analysis duration pushed || echo ❌ Analysis duration failed
-
+          
           echo 📤 Pushing lines of code...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_analysis/instance/%PIPELINE_ID% -d "cicd_source_lines_of_code ${{ steps.analysis.outputs.lines-of-code }}" && echo ✅ Lines of code pushed || echo ❌ Lines of code failed
-
+          
           echo 📤 Pushing complexity score...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_analysis/instance/%PIPELINE_ID% -d "cicd_source_complexity_score ${{ steps.analysis.outputs.complexity }}" && echo ✅ Complexity score pushed || echo ❌ Complexity score failed
-
+          
           echo ========================================
 
   # =============================================================================
@@ -194,7 +182,7 @@ jobs:
       - name: Set up Python environment
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install dependencies with timing
         shell: cmd
@@ -220,20 +208,20 @@ jobs:
           cd ${{ env.SERVICE_PATH }}
           echo TEST_START_TIME=%time% >> %GITHUB_ENV%
           echo 🧪 RUNNING COMPREHENSIVE TEST SUITE...
-
+          
           REM Simulate various test types with realistic timing
           echo ▶️ Unit Tests (15 seconds)
           ping -n 16 127.0.0.1 > nul
           echo ✅ Unit tests passed (42/42)
-
+          
           echo ▶️ Integration Tests (25 seconds)
           ping -n 26 127.0.0.1 > nul
           echo ✅ Integration tests passed (18/18)
-
+          
           echo ▶️ Security Tests (10 seconds)
           ping -n 11 127.0.0.1 > nul
           echo ✅ Security tests passed (12/12)
-
+          
           echo TEST_END_TIME=%time% >> %GITHUB_ENV%
 
       - name: Performance benchmarking
@@ -241,13 +229,13 @@ jobs:
         run: |
           echo BENCHMARK_START_TIME=%time% >> %GITHUB_ENV%
           echo 📊 PERFORMANCE BENCHMARKING...
-
+          
           REM Simulate performance tests
           ping -n 21 127.0.0.1 > nul
           echo ✅ API Response Time: 145ms (avg)
           echo ✅ Memory Usage: 245MB (peak)
           echo ✅ CPU Usage: 12%% (avg)
-
+          
           echo BENCHMARK_END_TIME=%time% >> %GITHUB_ENV%
 
       - name: Calculate build metrics and push to Prometheus
@@ -255,16 +243,16 @@ jobs:
         shell: cmd
         run: |
           echo BUILD_END_TIME=%time% >> %GITHUB_ENV%
-
+          
           REM Calculate durations (simplified - in real scenario use proper time calculation)
           set BUILD_DURATION=120
           set TEST_DURATION=60
           set BENCHMARK_DURATION=20
-
+          
           echo build-duration=%BUILD_DURATION% >> %GITHUB_OUTPUT%
           echo test-results=passed >> %GITHUB_OUTPUT%
           echo build-status=success >> %GITHUB_OUTPUT%
-
+          
           echo ========================================
           echo 📊 PUSHING BUILD & TEST METRICS
           echo ========================================
@@ -275,32 +263,32 @@ jobs:
           echo Integration Tests: 18
           echo Security Tests: 12
           echo.
-
+          
           REM Push detailed metrics to Prometheus with error handling
           echo 📤 Pushing build duration...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_build/instance/%PIPELINE_ID% -d "cicd_build_duration_seconds %BUILD_DURATION%" && echo ✅ Build duration pushed || echo ❌ Build duration failed
-
+          
           echo 📤 Pushing test duration...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_build/instance/%PIPELINE_ID% -d "cicd_test_duration_seconds %TEST_DURATION%" && echo ✅ Test duration pushed || echo ❌ Test duration failed
-
+          
           echo 📤 Pushing benchmark duration...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_build/instance/%PIPELINE_ID% -d "cicd_benchmark_duration_seconds %BENCHMARK_DURATION%" && echo ✅ Benchmark duration pushed || echo ❌ Benchmark duration failed
-
+          
           echo 📤 Pushing unit tests count...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_build/instance/%PIPELINE_ID% -d "cicd_unit_tests_total 42" && echo ✅ Unit tests count pushed || echo ❌ Unit tests count failed
-
+          
           echo 📤 Pushing integration tests count...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_build/instance/%PIPELINE_ID% -d "cicd_integration_tests_total 18" && echo ✅ Integration tests count pushed || echo ❌ Integration tests count failed
-
+          
           echo 📤 Pushing security tests count...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_build/instance/%PIPELINE_ID% -d "cicd_security_tests_total 12" && echo ✅ Security tests count pushed || echo ❌ Security tests count failed
-
+          
           echo 📤 Pushing API response time...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_build/instance/%PIPELINE_ID% -d "cicd_api_response_time_ms 145" && echo ✅ API response time pushed || echo ❌ API response time failed
-
+          
           echo 📤 Pushing memory usage...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_build/instance/%PIPELINE_ID% -d "cicd_memory_usage_mb 245" && echo ✅ Memory usage pushed || echo ❌ Memory usage failed
-
+          
           echo ========================================
 
   # =============================================================================
@@ -326,19 +314,10 @@ jobs:
           echo ==========================================
           echo ⏱️ Waiting for human code review approval...
           echo 📊 Timer started for Traditional CI/CD research
-
-          echo ========================================
-          echo 📊 PUSHING APPROVAL START METRICS
-          echo ========================================
-
-          REM Push approval start metrics with error handling
-          echo 📤 Pushing approval start timestamp...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_start_timestamp{gate=\"code_review\"} %date:~10,4%%date:~4,2%%date:~7,2%%time:~0,2%%time:~3,2%%time:~6,2%" && echo ✅ Start timestamp pushed || echo ❌ Start timestamp failed
-
-          echo 📤 Setting approval waiting status...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_waiting{gate=\"code_review\"} 1" && echo ✅ Waiting status set || echo ❌ Waiting status failed
-
-          echo ========================================
+          
+          REM Push approval start metrics
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_start_timestamp{gate=\"code_review\"} %date:~10,4%%date:~4,2%%date:~7,2%%time:~0,2%%time:~3,2%%time:~6,2%"
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_waiting{gate=\"code_review\"} 1"
 
       - name: Manual approval checkpoint
         shell: cmd
@@ -355,12 +334,12 @@ jobs:
         shell: cmd
         run: |
           echo APPROVAL_END_TIME=%time% >> %GITHUB_ENV%
-
+          
           REM Calculate approval duration (simplified)
           set APPROVAL_DURATION=180
           echo approval-duration=%APPROVAL_DURATION% >> %GITHUB_OUTPUT%
           echo approver=${{ github.actor }} >> %GITHUB_OUTPUT%
-
+          
           echo ========================================
           echo 📊 PUSHING MANUAL APPROVAL METRICS
           echo ========================================
@@ -368,17 +347,17 @@ jobs:
           echo Approver: ${{ github.actor }}
           echo Gate: Code Review
           echo.
-
+          
           REM Push approval completion metrics with error handling
           echo 📤 Pushing approval duration...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_duration_seconds{gate=\"code_review\"} %APPROVAL_DURATION%" && echo ✅ Approval duration pushed || echo ❌ Approval duration failed
-
+          
           echo 📤 Updating approval waiting status...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_waiting{gate=\"code_review\"} 0" && echo ✅ Waiting status updated || echo ❌ Waiting status failed
-
+          
           echo 📤 Incrementing manual interventions...
           curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_manual_interventions_total 1" && echo ✅ Manual interventions pushed || echo ❌ Manual interventions failed
-
+          
           echo ========================================
 
   # =============================================================================
@@ -428,29 +407,26 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Calculate build metrics
+      - name: Calculate build metrics and push to Prometheus
         id: build-output
         run: |
           BUILD_END=$(date +%s)
           BUILD_DURATION=$((BUILD_END - BUILD_START))
           IMAGE_TAG="traditional-cicd-${SHORT_SHA}"
-
+          
           # Simulate image size calculation
           IMAGE_SIZE=245
-
+          
           echo "image-tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "build-duration=${BUILD_DURATION}" >> $GITHUB_OUTPUT
           echo "image-size=${IMAGE_SIZE}" >> $GITHUB_OUTPUT
-
-          echo "==========================================="
-          echo "🐳 DOCKER BUILD METRICS COLLECTED"
-          echo "==========================================="
+          
+          # Docker build metrics stored as outputs - will be collected in summary job
           echo "✅ Docker build completed successfully"
           echo "📊 Build Duration: ${BUILD_DURATION} seconds"  
           echo "📦 Image Size: ${IMAGE_SIZE} MB"
           echo "🏷️ Image Tag: ${IMAGE_TAG}"
-          echo "⚠️ Note: Metrics will be pushed in summary job (self-hosted runner)"
-          echo "==========================================="
+          echo "⚠️ Note: Metrics will be collected in final summary job (running on self-hosted)"
 
   # =============================================================================
   # SECURITY & COMPLIANCE APPROVAL
@@ -476,33 +452,18 @@ jobs:
           echo 🔍 Security team review required
           echo 📋 Compliance checklist verification
           echo ⏱️ Traditional CI/CD: Manual security validation
-          echo.
-
-          echo ========================================
-          echo 📊 PUSHING SECURITY APPROVAL METRICS
-          echo ========================================
-
-          REM Push security approval metrics with error handling
-          echo 📤 Pushing security approval start timestamp...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_start_timestamp{gate=\"security\"} %date:~10,4%%date:~4,2%%date:~7,2%%time:~0,2%%time:~3,2%%time:~6,2%" && echo ✅ Start timestamp pushed || echo ❌ Start timestamp failed
-
-          echo 📤 Setting security approval waiting status...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_waiting{gate=\"security\"} 1" && echo ✅ Waiting status set || echo ❌ Waiting status failed
-
+          
+          REM Push security approval metrics
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_start_timestamp{gate=\"security\"} %date:~10,4%%date:~4,2%%date:~7,2%%time:~0,2%%time:~3,2%%time:~6,2%"
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_waiting{gate=\"security\"} 1"
+          
           REM Calculate security approval duration (simplified)
           set SECURITY_DURATION=420
           echo security-duration=%SECURITY_DURATION% >> %GITHUB_OUTPUT%
-
-          echo 📤 Pushing security approval duration...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_duration_seconds{gate=\"security\"} %SECURITY_DURATION%" && echo ✅ Duration pushed || echo ❌ Duration failed
-
-          echo 📤 Updating security approval waiting status...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_waiting{gate=\"security\"} 0" && echo ✅ Waiting status updated || echo ❌ Waiting status failed
-
-          echo 📤 Incrementing manual interventions...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_manual_interventions_total 2" && echo ✅ Manual interventions pushed || echo ❌ Manual interventions failed
-
-          echo ========================================
+          
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_duration_seconds{gate=\"security\"} %SECURITY_DURATION%"
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_approval_waiting{gate=\"security\"} 0"
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_manual_interventions_total 2"
 
   # =============================================================================
   # DEPLOYMENT WITH COMPREHENSIVE MONITORING
@@ -532,7 +493,7 @@ jobs:
         shell: cmd
         run: |
           echo 🚨 SIMULATING DEPLOYMENT FAILURE FOR RESEARCH
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_deployment/instance/%PIPELINE_ID% -d "cicd_deployment_failures_total 1" && echo ✅ Failure metric pushed || echo ❌ Failure metric failed
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_deployment/instance/%PIPELINE_ID% -d "cicd_deployment_failures_total 1"
           exit 1
 
       - name: Deploy to staging with monitoring
@@ -540,13 +501,13 @@ jobs:
         run: |
           echo 📦 Creating staging namespace...
           kubectl create namespace staging --dry-run=client -o yaml | kubectl apply -f -
-
+          
           echo 🔄 Applying deployment manifests...
           kubectl apply -f k8s/user-service-deployment.yaml -n staging
-
+          
           echo 🏷️ Updating image tag...
           kubectl set image deployment/user-service-deployment user-service=${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag }} -n staging
-
+          
           echo ⏳ Waiting for rollout completion...
           kubectl rollout status deployment/user-service-deployment -n staging --timeout=300s
 
@@ -564,28 +525,15 @@ jobs:
         shell: cmd
         run: |
           echo DEPLOY_END_TIME=%time% >> %GITHUB_ENV%
-
+          
           REM Calculate deployment duration
           set DEPLOY_DURATION=85
           echo deployment-duration=%DEPLOY_DURATION% >> %GITHUB_OUTPUT%
           echo deployment-status=success >> %GITHUB_OUTPUT%
-
-          echo ========================================
-          echo 📊 PUSHING DEPLOYMENT METRICS
-          echo ========================================
-          echo Deployment Duration: %DEPLOY_DURATION%s
-          echo Deployment Status: Success
-          echo Environment: Staging
-          echo.
-
-          REM Push deployment metrics with error handling
-          echo 📤 Pushing deployment duration...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_deployment/instance/%PIPELINE_ID% -d "cicd_deployment_duration_seconds{environment=\"staging\"} %DEPLOY_DURATION%" && echo ✅ Duration pushed || echo ❌ Duration failed
-
-          echo 📤 Pushing deployment success count...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_deployment/instance/%PIPELINE_ID% -d "cicd_deployment_success_total{environment=\"staging\"} 1" && echo ✅ Success count pushed || echo ❌ Success count failed
-
-          echo ========================================
+          
+          REM Push deployment metrics
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_deployment/instance/%PIPELINE_ID% -d "cicd_deployment_duration_seconds{environment=\"staging\"} %DEPLOY_DURATION%"
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_deployment/instance/%PIPELINE_ID% -d "cicd_deployment_success_total{environment=\"staging\"} 1"
 
   # =============================================================================
   # FINAL APPROVAL FOR PRODUCTION
@@ -609,112 +557,50 @@ jobs:
           echo 📊 Performance validation complete
           echo 🔒 Security clearance confirmed
           echo ⏱️ Traditional CI/CD: Final human checkpoint
-          echo.
-
-          echo 📤 Incrementing manual interventions for production...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_manual_interventions_total 3" && echo ✅ Production intervention pushed || echo ❌ Production intervention failed
+          
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_approval/instance/%PIPELINE_ID% -d "cicd_manual_interventions_total 3"
 
   # =============================================================================
   # COMPREHENSIVE PIPELINE METRICS COLLECTION
   # =============================================================================
   pipeline-metrics-summary:
     name: 📊 Pipeline Metrics Summary & Research Data
-    needs:
-      [
-        pipeline-initialization,
-        source-code-analysis,
-        build-and-test,
-        manual-approval-code-review,
-        docker-build,
-        manual-approval-security,
-        deploy-staging,
-      ]
+    needs: [pipeline-initialization, source-code-analysis, build-and-test, manual-approval-code-review, docker-build, manual-approval-security, deploy-staging]
     runs-on: self-hosted
     if: always()
 
     steps:
-      - name: Verify monitoring infrastructure
-        shell: cmd
-        run: |
-          echo 🔍 VERIFYING MONITORING INFRASTRUCTURE
-          echo ====================================
-          echo 📤 Testing Pushgateway connectivity...
-          curl -f http://%PROMETHEUS_PUSHGATEWAY%/api/v1/admin/wipe && echo ✅ Pushgateway accessible || echo ❌ Pushgateway not accessible
-          echo.
-
-      - name: Calculate total pipeline metrics with validation
+      - name: Calculate total pipeline metrics
         shell: cmd
         run: |
           echo 📊 TRADITIONAL CI/CD PIPELINE METRICS SUMMARY
           echo ============================================
           echo.
-
-          REM Validate outputs exist before using them
-          set ANALYSIS_DURATION=${{ needs.source-code-analysis.outputs.analysis-duration || '0' }}
-          set BUILD_DURATION=${{ needs.build-and-test.outputs.build-duration || '0' }}
-          set APPROVAL_DURATION=${{ needs.manual-approval-code-review.outputs.approval-duration || '0' }}
-          set DOCKER_DURATION=${{ needs.docker-build.outputs.build-duration || '0' }}
-          set SECURITY_DURATION=${{ needs.manual-approval-security.outputs.security-duration || '0' }}
-          set DEPLOY_DURATION=${{ needs.deploy-staging.outputs.deployment-duration || '0' }}
-
-          echo 🔍 Source Analysis: %ANALYSIS_DURATION%s
-          echo 🔨 Build & Test: %BUILD_DURATION%s  
-          echo 🔐 Code Review Wait: %APPROVAL_DURATION%s
-          echo 🐳 Docker Build: %DOCKER_DURATION%s
-          echo 🔒 Security Approval: %SECURITY_DURATION%s
-          echo 🚀 Deployment: %DEPLOY_DURATION%s
+          echo 🔍 Source Analysis: ${{ needs.source-code-analysis.outputs.analysis-duration }}s
+          echo 🔨 Build & Test: ${{ needs.build-and-test.outputs.build-duration }}s  
+          echo 🔐 Code Review Wait: ${{ needs.manual-approval-code-review.outputs.approval-duration }}s
+          echo 🐳 Docker Build: ${{ needs.docker-build.outputs.build-duration }}s
+          echo 🔒 Security Approval: ${{ needs.manual-approval-security.outputs.security-duration }}s
+          echo 🚀 Deployment: ${{ needs.deploy-staging.outputs.deployment-duration }}s
           echo.
-          echo 📈 Lines of Code: ${{ needs.source-code-analysis.outputs.lines-of-code || 'N/A' }}
-          echo 🏷️ Image Tag: ${{ needs.docker-build.outputs.image-tag || 'N/A' }}
-          echo 📦 Image Size: ${{ needs.docker-build.outputs.image-size || 'N/A' }}MB
+          echo 📈 Lines of Code: ${{ needs.source-code-analysis.outputs.lines-of-code }}
+          echo 🏷️ Image Tag: ${{ needs.docker-build.outputs.image-tag }}
+          echo 📦 Image Size: ${{ needs.docker-build.outputs.image-size }}MB
           echo.
-
-          REM Calculate total pipeline duration with safety checks
-          set /a TOTAL_DURATION=%ANALYSIS_DURATION%+%BUILD_DURATION%+%APPROVAL_DURATION%+%DOCKER_DURATION%+%SECURITY_DURATION%+%DEPLOY_DURATION%
-
+          
+          REM Calculate total pipeline duration
+          set /a TOTAL_DURATION=${{ needs.source-code-analysis.outputs.analysis-duration }}+${{ needs.build-and-test.outputs.build-duration }}+${{ needs.manual-approval-code-review.outputs.approval-duration }}+${{ needs.docker-build.outputs.build-duration }}+${{ needs.manual-approval-security.outputs.security-duration }}+${{ needs.deploy-staging.outputs.deployment-duration }}
+          
           echo 🕐 Total Pipeline Duration: %TOTAL_DURATION% seconds
-          echo.
+          
+          REM Push all collected metrics including Docker metrics
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_pipeline_duration_seconds %TOTAL_DURATION%"
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_pipeline_end_timestamp %date:~10,4%%date:~4,2%%date:~7,2%%time:~0,2%%time:~3,2%%time:~6,2%"
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_pipeline_status{status=\"completed\"} 1"
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_docker/instance/%PIPELINE_ID% -d "cicd_docker_build_duration_seconds ${{ needs.docker-build.outputs.build-duration }}"
+          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_docker/instance/%PIPELINE_ID% -d "cicd_docker_image_size_mb ${{ needs.docker-build.outputs.image-size }}"
 
-      - name: Push comprehensive pipeline metrics
-        shell: cmd
-        run: |
-          echo ========================================
-          echo 📊 PUSHING COMPREHENSIVE PIPELINE METRICS
-          echo ========================================
-
-          REM Get validated durations
-          set ANALYSIS_DURATION=${{ needs.source-code-analysis.outputs.analysis-duration || '0' }}
-          set BUILD_DURATION=${{ needs.build-and-test.outputs.build-duration || '0' }}
-          set APPROVAL_DURATION=${{ needs.manual-approval-code-review.outputs.approval-duration || '0' }}
-          set DOCKER_DURATION=${{ needs.docker-build.outputs.build-duration || '0' }}
-          set SECURITY_DURATION=${{ needs.manual-approval-security.outputs.security-duration || '0' }}
-          set DEPLOY_DURATION=${{ needs.deploy-staging.outputs.deployment-duration || '0' }}
-          set /a TOTAL_DURATION=%ANALYSIS_DURATION%+%BUILD_DURATION%+%APPROVAL_DURATION%+%DOCKER_DURATION%+%SECURITY_DURATION%+%DEPLOY_DURATION%
-
-          REM Push comprehensive metrics with error handling
-          echo 📤 Pushing total pipeline duration...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_pipeline_duration_seconds{pipeline_type=\"traditional\"} %TOTAL_DURATION%" && echo ✅ Pipeline duration pushed || echo ❌ Pipeline duration failed
-
-          echo 📤 Pushing pipeline end timestamp...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_pipeline_end_timestamp %date:~10,4%%date:~4,2%%date:~7,2%%time:~0,2%%time:~3,2%%time:~6,2%" && echo ✅ End timestamp pushed || echo ❌ End timestamp failed
-
-          echo 📤 Pushing pipeline completion status...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_pipeline_status{status=\"completed\",pipeline_type=\"traditional\"} 1" && echo ✅ Status pushed || echo ❌ Status failed
-
-          echo 📤 Pushing Docker build metrics (collected from outputs)...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_docker/instance/%PIPELINE_ID% -d "cicd_docker_build_duration_seconds %DOCKER_DURATION%" && echo ✅ Docker duration pushed || echo ❌ Docker duration failed
-
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_docker/instance/%PIPELINE_ID% -d "cicd_docker_image_size_mb ${{ needs.docker-build.outputs.image-size || '0' }}" && echo ✅ Docker size pushed || echo ❌ Docker size failed
-
-          echo 📤 Pushing automation level metrics...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_automation_level{pipeline_type=\"traditional\"} 0.6" && echo ✅ Automation level pushed || echo ❌ Automation level failed
-
-          echo 📤 Pushing total manual interventions...
-          curl -X POST http://%PROMETHEUS_PUSHGATEWAY%/metrics/job/cicd_pipeline/instance/%PIPELINE_ID% -d "cicd_total_manual_interventions{pipeline_type=\"traditional\"} 3" && echo ✅ Manual interventions pushed || echo ❌ Manual interventions failed
-
-          echo ========================================
-
-      - name: Research data export and validation
+      - name: Research data export
         shell: cmd
         run: |
           echo 🎓 RESEARCH DATA SUMMARY FOR ACADEMIC ANALYSIS
@@ -724,21 +610,13 @@ jobs:
           echo Total Manual Interventions: 3
           echo Human Dependency Points: Code Review, Security, Production Release
           echo Automation Level: Partial (Build/Test/Deploy automated, Approvals manual)
-          echo Pipeline Type: Traditional CI/CD
           echo.
           echo 📊 Key Research Metrics Collected:
-          echo - Pipeline execution time: ✅
-          echo - Manual approval wait times: ✅  
-          echo - Build and test performance: ✅
-          echo - Docker build metrics: ✅
-          echo - Resource utilization patterns: ✅
-          echo - Human intervention frequency: ✅
-          echo - Failure recovery procedures: ✅
-          echo.
-          echo 🔗 Access Points:
-          echo - Prometheus: http://localhost:30090
-          echo - Grafana: http://localhost:30300 (admin/admin)
-          echo - Pushgateway: http://localhost:30091
+          echo - Pipeline execution time
+          echo - Manual approval wait times  
+          echo - Build and test performance
+          echo - Resource utilization patterns
+          echo - Human intervention frequency
+          echo - Failure recovery procedures
           echo.
           echo ✅ All metrics pushed to Prometheus for analysis
-          echo ✅ Traditional CI/CD pipeline research data collection complete
