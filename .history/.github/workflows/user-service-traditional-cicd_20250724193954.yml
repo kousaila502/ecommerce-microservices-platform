@@ -639,7 +639,7 @@ jobs:
           echo 🔍 VERIFYING MONITORING INFRASTRUCTURE
           echo ====================================
           echo 📤 Testing Pushgateway connectivity...
-          curl -f http://%PROMETHEUS_PUSHGATEWAY%/metrics && echo ✅ Pushgateway accessible || echo ❌ Pushgateway not accessible
+          curl -f curl -f http://%PROMETHEUS_PUSHGATEWAY%/metrics && echo ✅ Pushgateway accessible || echo ❌ Pushgateway not accessible
           echo.
 
       - name: Calculate total pipeline metrics with validation
