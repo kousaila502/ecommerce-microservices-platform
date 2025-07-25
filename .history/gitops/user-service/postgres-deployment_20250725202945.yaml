@@ -1,0 +1,132 @@
+# =============================================================================
+# GITOPS-OPTIMIZED USER SERVICE DEPLOYMENT
+# ESI-SBA Thesis Research - Simplified and Compatible
+# =============================================================================
+
+---
+# User Service Deployment with GitOps Labels (Simplified)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service-deployment
+  labels:
+    app: user-service
+    # GitOps Methodology Labels for Monitoring Differentiation
+    methodology: gitops
+    pipeline-type: argocd
+    deployment-approach: declarative
+    research-phase: phase3-gitops
+    managed-by: argocd
+    # Version Management
+    version-series: "7.0.1.x"
+  annotations:
+    # ArgoCD Sync Annotations
+    argocd.argoproj.io/sync-wave: "2"  # Deploy after database
+    argocd.argoproj.io/sync-options: "Prune=true,Delete=true"
+    # GitOps Research Annotations
+    gitops.research/deployment-method: "declarative"
+    gitops.research/automation-level: "100"
+    gitops.research/manual-interventions: "0"
+    gitops.research/version-strategy: "semantic-gitops"
+spec:
+  replicas: 1
+  # Rollback-friendly strategy (same as existing)
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  revisionHistoryLimit: 10  # Keep history for rollbacks
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+        # GitOps Labels for monitoring differentiation
+        methodology: gitops
+        pipeline-type: argocd
+        version-series: "7.0.1.x"
+    spec:
+      containers:
+      - name: user-service
+        # GitOps Versioning Strategy - 7.0.1.x Series
+        image: kousaila/user-service:gitops-7.0.1.1
+        imagePullPolicy: Always
+        env:
+        # Same environment variables as existing setup
+        - name: DATABASE_URL
+          value: postgresql+asyncpg://admin:password123@postgresql:5432/userdb        
+        - name: POSTGRES_HOST
+          value: postgresql  # Keep same service name
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_DB
+          value: userdb
+        - name: POSTGRES_USER
+          value: admin
+        - name: POSTGRES_PASSWORD
+          value: password123
+        - name: SECRET_KEY
+          value: your-super-secret-jwt-key-change-in-production
+        - name: ALGORITHM
+          value: HS256
+        - name: ACCESS_TOKEN_EXPIRE_MINUTES
+          value: "30"
+        - name: CORS_ORIGINS
+          value: "http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:50951"
+        # GitOps-specific environment variables (minimal)
+        - name: DEPLOYMENT_METHOD
+          value: "gitops-argocd"
+        - name: RESEARCH_PHASE
+          value: "phase3-gitops-comparison"
+        - name: VERSION_SERIES
+          value: "7.0.1.x"
+        ports:
+        - containerPort: 9090
+        # Same resource limits as existing
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        # Simple health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9090
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 9090
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+# User Service Service (Same as existing)
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+    # GitOps Labels
+    methodology: gitops
+    pipeline-type: argocd
+    managed-by: argocd
+    version-series: "7.0.1.x"
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    gitops.research/service-type: "application"
+spec:
+  selector:
+    app: user-service
+  ports:
+  - port: 9090
+    targetPort: 9090
+  type: ClusterIP

@@ -1,0 +1,276 @@
+# =============================================================================
+# GITOPS-OPTIMIZED POSTGRESQL DEPLOYMENT FOR USER SERVICE
+# ESI-SBA Thesis Research - GitOps vs Traditional CI/CD Comparison
+# Optimized for ArgoCD declarative deployment methodology
+# =============================================================================
+
+---
+# PostgreSQL Deployment with GitOps Optimizations
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service-postgresql
+  namespace: user-service
+  labels:
+    app: user-service-postgresql
+    component: database
+    service: user-service
+    # GitOps Methodology Labels
+    methodology: gitops
+    pipeline-type: argocd
+    deployment-approach: declarative
+    research-phase: phase3-gitops
+    managed-by: argocd
+    # Application Metadata
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: user-service-postgresql
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: user-service
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/version: "13"
+  annotations:
+    # ArgoCD Sync Annotations
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: "Prune=true,Delete=true"
+    argocd.argoproj.io/compare-options: "ServerSideDiff=true"
+    # GitOps Research Annotations
+    gitops.research/deployment-method: "declarative"
+    gitops.research/automation-level: "100"
+    gitops.research/manual-interventions: "0"
+    gitops.research/thesis-component: "postgresql-database"
+    # Operational Annotations
+    deployment.kubernetes.io/revision: "1"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"kind":"Deployment","apiVersion":"apps/v1","metadata":{"name":"user-service-postgresql"}}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # Ensures data consistency for database
+  selector:
+    matchLabels:
+      app: user-service-postgresql
+      component: database
+  template:
+    metadata:
+      labels:
+        app: user-service-postgresql
+        component: database
+        service: user-service
+        methodology: gitops
+        pipeline-type: argocd
+        # Standard Kubernetes Labels
+        app.kubernetes.io/name: postgresql
+        app.kubernetes.io/instance: user-service-postgresql
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of: user-service
+        app.kubernetes.io/managed-by: argocd
+      annotations:
+        # Pod-level GitOps annotations
+        gitops.research/pod-deployment: "declarative"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: postgresql
+        image: postgres:13
+        imagePullPolicy: IfNotPresent
+        env:
+        # Database Configuration (same as existing)
+        - name: POSTGRES_DB
+          value: userdb
+        - name: POSTGRES_USER
+          value: admin
+        - name: POSTGRES_PASSWORD
+          value: password123
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        # GitOps-specific environment variables
+        - name: DEPLOYMENT_METHOD
+          value: "gitops-argocd"
+        - name: RESEARCH_PHASE
+          value: "phase3-gitops-comparison"
+        ports:
+        - name: postgresql
+          containerPort: 5432
+          protocol: TCP
+        # Health Checks for GitOps reliability
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U admin -d userdb
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U admin -d userdb
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        # Resource limits (same as existing configuration)
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: postgres-config
+          mountPath: /etc/postgresql/postgresql.conf
+          subPath: postgresql.conf
+          readOnly: true
+        # Security Context for GitOps best practices
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 999
+          runAsGroup: 999
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: postgres-storage
+        emptyDir:
+          sizeLimit: 2Gi
+      - name: postgres-config
+        configMap:
+          name: user-service-postgresql-config
+      # Security and scheduling optimizations
+      securityContext:
+        fsGroup: 999
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 60
+
+---
+# PostgreSQL Service with GitOps Labels
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service-postgresql
+  namespace: user-service
+  labels:
+    app: user-service-postgresql
+    component: database
+    service: user-service
+    # GitOps Methodology Labels
+    methodology: gitops
+    pipeline-type: argocd
+    deployment-approach: declarative
+    managed-by: argocd
+    # Standard Kubernetes Labels
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: user-service-postgresql
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: user-service
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    # ArgoCD Service Annotations
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: "Prune=true"
+    # GitOps Research Annotations
+    gitops.research/service-type: "database"
+    gitops.research/deployment-method: "declarative"
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: ClusterIP
+  ports:
+  - name: postgresql
+    port: 5432
+    targetPort: postgresql
+    protocol: TCP
+  selector:
+    app: user-service-postgresql
+    component: database
+  sessionAffinity: None
+
+---
+# PostgreSQL ConfigMap for GitOps Configuration Management
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-postgresql-config
+  namespace: user-service
+  labels:
+    app: user-service-postgresql
+    component: database-config
+    service: user-service
+    methodology: gitops
+    pipeline-type: argocd
+    managed-by: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    gitops.research/config-type: "database-configuration"
+data:
+  postgresql.conf: |
+    # PostgreSQL Configuration for GitOps Research Environment
+    # Optimized for user-service workload
+    
+    # Connection Settings
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 100
+    
+    # Memory Settings (optimized for 512Mi limit)
+    shared_buffers = 128MB
+    effective_cache_size = 256MB
+    work_mem = 4MB
+    maintenance_work_mem = 64MB
+    
+    # Logging for GitOps monitoring
+    log_destination = 'stderr'
+    logging_collector = on
+    log_directory = 'pg_log'
+    log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+    log_statement = 'all'
+    log_min_duration_statement = 1000
+    
+    # Performance tuning
+    checkpoint_completion_target = 0.9
+    wal_buffers = 16MB
+    default_statistics_target = 100
+    
+    # GitOps research specific settings
+    log_line_prefix = '[GitOps-Research] %t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+
+---
+# Namespace for User Service (GitOps Pattern)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: user-service
+  labels:
+    # GitOps Methodology Labels
+    methodology: gitops
+    pipeline-type: argocd
+    deployment-approach: declarative
+    research-phase: phase3-gitops
+    managed-by: argocd
+    # Service Labels
+    service: user-service
+    component: namespace
+    # Standard Kubernetes Labels
+    app.kubernetes.io/name: user-service
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/part-of: techmart-ecommerce
+  annotations:
+    # ArgoCD Namespace Annotations
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-options: "Prune=false,Delete=false"
+    # GitOps Research Annotations
+    gitops.research/namespace-purpose: "user-service-deployment"
+    gitops.research/thesis-component: "microservice-namespace"
+    # Operational Annotations
+    scheduler.alpha.kubernetes.io/node-selector: ""
