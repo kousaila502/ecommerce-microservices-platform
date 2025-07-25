@@ -201,7 +201,7 @@ jobs:
     if: always()
     steps:
       - name: Calculate and push GitOps pipeline metrics
-        shell: powershell
+        shell: pwsh
         run: |
           $BUILD_DURATION = "${{ needs.gitops_build-and-test.outputs.build-duration }}"
           $DOCKER_DURATION = "${{ needs.gitops_docker-build.outputs.build-duration }}"
