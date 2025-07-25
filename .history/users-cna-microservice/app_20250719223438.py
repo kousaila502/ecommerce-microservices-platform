@@ -1,4 +1,4 @@
-﻿# app.py - Fixed with all routers included
+# app.py - Fixed with all routers included
 
 import os
 from fastapi import FastAPI
@@ -49,7 +49,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "user-service",
-        "version": "6.2.1.7",
+        "version": "2.2.0",
         "features": [
             "authentication",
             "user-management", 
@@ -57,7 +57,8 @@ async def health_check():
             "password-reset",
             "email-verification"
         ],
-        "message": "E-Commerce User Service with Authentication, Password Reset & Email Verification Good to Go!!!"
+        "message": "E-Commerce User Service with Authentication, Password Reset & Email Verification",
+
     }
 
 @app.get("/")
@@ -77,5 +78,3 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=9090)
-
-
