@@ -275,8 +275,13 @@ jobs:
           Write-Host "========================================"
           
           try {
-              $timestamp = Get-Date -UFormat %s
-              $body = "gitops_pipeline_duration_seconds $TOTAL_DURATION`ngitops_automation_level 1.0`ngitops_manual_interventions_total 0`ngitops_pipeline_end_timestamp $timestamp`ngitops_pipeline_status 1`n"
+              $body = @"
+gitops_pipeline_duration_seconds $TOTAL_DURATION
+gitops_automation_level 1.0
+gitops_manual_interventions_total 0
+gitops_pipeline_end_timestamp $(Get-Date -UFormat %s)
+gitops_pipeline_status 1
+"@
               Invoke-WebRequest -Uri "http://$env:PROMETHEUS_PUSHGATEWAY/metrics/job/gitops_pipeline/instance/$env:PIPELINE_ID" -Method POST -Body $body -ContentType "text/plain"
               Write-Host "✅ All GitOps metrics pushed to Prometheus"
           } catch { 
