@@ -49,7 +49,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "user-service",
-        "version": "6.2.1.3",
+        "version": "6.2.1.4",
         "features": [
             "authentication",
             "user-management", 
@@ -77,4 +77,5 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=9090)
+
 

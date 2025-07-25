@@ -20,7 +20,7 @@ $LogFile = Join-Path $ProjectPath "pipeline_execution_log.txt"
 
 # Schedule Configuration - Starting from current time (17:16)
 $ScheduledTimes = @(
-    "18:47",
+    "18:"
     "19:00",  # 7:00 PM - Run #5
     "19:45",  # 7:45 PM - Run #6
     "20:30",  # 8:30 PM - Run #7
