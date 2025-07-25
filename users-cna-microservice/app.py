@@ -1,4 +1,4 @@
-# app.py - Fixed with all routers included
+﻿# app.py - Fixed with all routers included
 
 import os
 from fastapi import FastAPI
@@ -49,7 +49,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "user-service",
-        "version": "6.2.1.1",
+        "version": "6.2.1.2",
         "features": [
             "authentication",
             "user-management", 
