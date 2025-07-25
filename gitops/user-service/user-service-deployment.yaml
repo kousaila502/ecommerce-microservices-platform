@@ -126,7 +126,7 @@ spec:
       containers:
       - name: user-service
         # Pipeline will replace this tag with actual GitOps version
-        image: kousaila/user-service:gitops-to-be-replaced
+        image: kousaila/user-service:gitops-7.0.1.6
         imagePullPolicy: Always
         env:
         # Same environment variables as existing setup
