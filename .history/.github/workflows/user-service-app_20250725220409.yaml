@@ -189,6 +189,7 @@ jobs:
         with:
           ref: gitops-argocd
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
           persist-credentials: true
 
       - name: Configure Git
