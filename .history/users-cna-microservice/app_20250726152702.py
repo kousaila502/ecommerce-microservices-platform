@@ -49,7 +49,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "user-service",
-        "version": "6.5",
+        "version": "6.",
         "features": [
             "authentication",
             "user-management", 
