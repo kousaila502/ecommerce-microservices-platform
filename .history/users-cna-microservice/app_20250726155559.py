@@ -57,7 +57,7 @@ async def health_check():
             "password-reset",
             "email-verification"
         ],
-        "message": "GitOps concurrent test 1"
+        "message": "GitOps concurrent test 1git"
     }
 
 @app.get("/")
