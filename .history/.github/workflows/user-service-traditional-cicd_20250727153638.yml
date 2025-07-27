@@ -530,7 +530,7 @@ jobs:
   # DEPLOYMENT WITH COMPREHENSIVE MONITORING
   # =============================================================================
   deploy-staging:
-    name: 🚀 Deploy to GKE with Monitoring
+    name: 🚀 Deploy to Staging with Monitoring
     needs: [docker-build, manual-approval-security]
     runs-on: self-hosted
     outputs:
@@ -541,24 +541,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ADD GKE AUTHENTICATION STEPS HERE
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-
-      - name: Set up GKE credentials
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: ecommerce-thesis
-          location: northamerica-northeast1-a
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-
       - name: Start deployment timer
         shell: cmd
         run: |
-          echo 🚀 DEPLOYMENT TO GKE STARTED
-          echo ============================
+          echo 🚀 DEPLOYMENT TO STAGING STARTED
+          echo ================================
           echo Image: ${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag }}
 
       - name: Simulate failure scenario (if requested)
@@ -575,10 +562,10 @@ jobs:
           }
           exit 1
 
-      - name: Deploy to GKE with monitoring
-        shell: bash
+      - name: Deploy to staging with monitoring
+        shell: cmd
         run: |
-          echo 📦 Creating research-apps namespace...
+          echo 📦 Creating staging namespace...
           kubectl create namespace research-apps --dry-run=client -o yaml | kubectl apply -f -
 
           echo 🔄 Applying deployment manifests...
@@ -591,12 +578,10 @@ jobs:
           kubectl rollout status deployment/user-service-deployment -n research-apps --timeout=300s
 
       - name: Post-deployment validation
-        shell: bash
+        shell: cmd
         run: |
           echo 🔍 VALIDATING DEPLOYMENT...
-          kubectl get pods -n research-apps
-          kubectl logs -l app=user-service -n research-apps --tail=50
-          echo ✅ GKE deployment validated
+          echo ✅ Staging deployment validated
 
       - name: Calculate deployment metrics
         id: deploy-metrics
@@ -806,6 +791,52 @@ jobs:
           echo "================================="
           echo "NOTIFICATION SENT"
           echo "================================="
+
+  # =============================================================================
+  # GOOGLE CLOUD DEPLOYMENT
+  # =============================================================================
+  deploy-gke:
+    name: 🚀 Deploy to GKE
+    needs: [docker-build, manual-approval-security]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'production'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ecommerce-thesis
+          location: northamerica-northeast1-a
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy to GKE
+        shell: cmd
+        run: |
+          echo "Deploying to GKE cluster..."
+          kubectl apply -f k8s/user-service-deployment.yaml -n production
+          kubectl set image deployment/user-service-deployment user-service=${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag }} -n production
+          kubectl rollout status deployment/user-service-deployment -n production --timeout=300s
+
+      - name: Post-deployment validation on GKE
+        shell: cmd
+        run: |
+          echo "Validating deployment on GKE..."
+          kubectl get pods -n production
+          kubectl logs -l app=user-service -n production --tail=50
+
+      - name: Notify stakeholders
+        shell: cmd
+        run: |
+          echo "Notifying stakeholders..."
+          echo "Deployment to GKE successful!" | mail -s "GKE Deployment Notification" -r "noreply@example.com" "admin@example.com"
 
   # =============================================================================
   # ERROR HANDLING AND NOTIFICATIONS

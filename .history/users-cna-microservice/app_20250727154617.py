@@ -59,7 +59,7 @@ async def health_check():
             "password-reset",
             "email-verification"
         ],
-        "message": "Test cloud traditional pipline"
+        "message": "Test "
     }
 
 @app.get("/")

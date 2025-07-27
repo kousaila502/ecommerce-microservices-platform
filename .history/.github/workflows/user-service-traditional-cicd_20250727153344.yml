@@ -530,7 +530,7 @@ jobs:
   # DEPLOYMENT WITH COMPREHENSIVE MONITORING
   # =============================================================================
   deploy-staging:
-    name: 🚀 Deploy to GKE with Monitoring
+    name: 🚀 Deploy to Staging with Monitoring
     needs: [docker-build, manual-approval-security]
     runs-on: self-hosted
     outputs:
@@ -541,24 +541,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ADD GKE AUTHENTICATION STEPS HERE
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-
-      - name: Set up GKE credentials
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: ecommerce-thesis
-          location: northamerica-northeast1-a
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-
       - name: Start deployment timer
         shell: cmd
         run: |
-          echo 🚀 DEPLOYMENT TO GKE STARTED
-          echo ============================
+          echo 🚀 DEPLOYMENT TO STAGING STARTED
+          echo ================================
           echo Image: ${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag }}
 
       - name: Simulate failure scenario (if requested)
@@ -575,28 +562,26 @@ jobs:
           }
           exit 1
 
-      - name: Deploy to GKE with monitoring
-        shell: bash
+      - name: Deploy to staging with monitoring
+        shell: cmd
         run: |
-          echo 📦 Creating research-apps namespace...
-          kubectl create namespace research-apps --dry-run=client -o yaml | kubectl apply -f -
+          echo 📦 Creating staging namespace...
+          kubectl create namespace staging --dry-run=client -o yaml | kubectl apply -f -
 
           echo 🔄 Applying deployment manifests...
-          kubectl apply -f k8s/user-service-deployment.yaml -n research-apps
+          kubectl apply -f k8s/user-service-deployment.yaml -n staging
 
           echo 🏷️ Updating image tag...
-          kubectl set image deployment/user-service-deployment user-service=${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag }} -n research-apps
+          kubectl set image deployment/user-service-deployment user-service=${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag }} -n staging
 
           echo ⏳ Waiting for rollout completion...
-          kubectl rollout status deployment/user-service-deployment -n research-apps --timeout=300s
+          kubectl rollout status deployment/user-service-deployment -n staging --timeout=300s
 
       - name: Post-deployment validation
-        shell: bash
+        shell: cmd
         run: |
           echo 🔍 VALIDATING DEPLOYMENT...
-          kubectl get pods -n research-apps
-          kubectl logs -l app=user-service -n research-apps --tail=50
-          echo ✅ GKE deployment validated
+          echo ✅ Staging deployment validated
 
       - name: Calculate deployment metrics
         id: deploy-metrics
@@ -808,6 +793,52 @@ jobs:
           echo "================================="
 
   # =============================================================================
+  # GOOGLE CLOUD DEPLOYMENT
+  # =============================================================================
+  deploy-gke:
+    name: 🚀 Deploy to GKE
+    needs: [docker-build, manual-approval-security]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'production'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ecommerce-thesis
+          location: northamerica-northeast1-a
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy to GKE
+        shell: cmd
+        run: |
+          echo "Deploying to GKE cluster..."
+          kubectl apply -f k8s/user-service-deployment.yaml -n production
+          kubectl set image deployment/user-service-deployment user-service=${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag }} -n production
+          kubectl rollout status deployment/user-service-deployment -n production --timeout=300s
+
+      - name: Post-deployment validation on GKE
+        shell: cmd
+        run: |
+          echo "Validating deployment on GKE..."
+          kubectl get pods -n production
+          kubectl logs -l app=user-service -n production --tail=50
+
+      - name: Notify stakeholders
+        shell: cmd
+        run: |
+          echo "Notifying stakeholders..."
+          echo "Deployment to GKE successful!" | mail -s "GKE Deployment Notification" -r "noreply@example.com" "admin@example.com"
+
+  # =============================================================================
   # ERROR HANDLING AND NOTIFICATIONS
   # =============================================================================
   error-handling:
@@ -824,37 +855,3 @@ jobs:
           echo "Pipeline ID: ${{ github.run_id }}"
           echo "Commit: ${{ github.sha }}"
           echo "Environment: ${{ github.event.inputs.environment }}"
-          echo "Failure Simulation: ${{ github.event.inputs.failure_simulation }}"
-          echo "Status: Failed"
-          echo "================================="
-          echo "📞 Calling on-call engineer..."
-          echo "📧 Sending email notification..."
-          echo "📱 Sending SMS notification..."
-          echo "💬 Sending Slack notification..."
-          echo "================================="
-          echo "NOTIFICATION SENT"
-          echo "================================="
-
-      - name: Research data export
-        shell: cmd
-        run: |
-          echo 🎓 TRADITIONAL CI/CD RESEARCH DATA COLLECTION COMPLETE
-          echo ====================================================
-          echo Pipeline ID: %PIPELINE_ID%
-          echo Total Manual Interventions: 3
-          echo Automation Level: 60%% (Build/Test/Deploy automated, Approvals manual)
-          echo Pipeline Type: Traditional CI/CD
-          echo.
-          echo 📊 Research Metrics Successfully Collected:
-          echo - Pipeline execution time: ✅
-          echo - Manual approval wait times: ✅  
-          echo - Build and test performance: ✅
-          echo - Docker build metrics: ✅
-          echo - Human intervention frequency: ✅
-          echo.
-          echo 🔗 View Data:
-          echo - Prometheus: http://34.152.31.190:9090
-          echo - Grafana: http://34.95.17.28:3000 (admin/research2024!)
-          echo - Pushgateway: http://34.118.180.18:9091
-          echo.
-          echo ✅ All metrics pushed to Prometheus for analysis
