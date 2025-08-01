@@ -19,7 +19,7 @@ interface RegisterRequest {
 const registerUser = async (userData: RegisterRequest) => {
   console.log('🔍 usersUrl being used:', usersUrl);
   console.log('🔍 Full register URL:', `${usersUrl}/auth/register`);
-  const response = await fetch(`${usersUrl}/auth/register`, { // Use config variable
+  const response = await fetch(`${usersUrl}auth/register`, { // Use config variable
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
