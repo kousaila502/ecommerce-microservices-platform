@@ -25,4 +25,3 @@ COPY . .
 # execute the command python main.py (in the WORKDIR) to start the app
 CMD pipenv run python app.py
 
-# Force rebuild $(date)

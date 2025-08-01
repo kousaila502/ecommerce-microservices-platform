@@ -23,6 +23,5 @@ EXPOSE 9090
 COPY . .
 
 # execute the command python main.py (in the WORKDIR) to start the app
-CMD pipenv run python app.py
+CMD ["pipenv", "run", "python", "app.py"]"
 
-# Force rebuild $(date)
