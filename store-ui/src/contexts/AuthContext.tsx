@@ -1,5 +1,6 @@
 // src/contexts/AuthContext.tsx (NEW FILE)
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { usersUrl } from '../api/config'; 
 
 interface User {
   id: number;
@@ -36,7 +37,7 @@ interface AuthProviderProps {
 // Auth API functions
 const authApi = {
   async login(email: string, password: string) {
-    const response = await fetch('http://localhost:8080/api/auth/login', {
+    const response = await fetch(`${usersUrl}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -50,7 +51,7 @@ const authApi = {
     return response.json();
   },
   async getCurrentUser(token: string) {
-    const response = await fetch('http://localhost:8080/api/auth/me', {
+    const response = await fetch(`${usersUrl}/auth/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
