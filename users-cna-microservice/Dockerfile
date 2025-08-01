@@ -17,7 +17,7 @@ RUN pipenv install
 EXPOSE 9090
 
 # Copy .env first to bust cache when it changes
-COPY .env .
+# COPY .env .  # Commented out - use Railway environment variables
 
 # copy the rest of the app
 COPY . .
