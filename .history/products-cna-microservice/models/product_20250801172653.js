@@ -31,7 +31,6 @@ productSchema.index({ department: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ title: 'text', description: 'text' }); // For search
 
-const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
-
+const Product = mongoose.model('Product', productSchema);
 
 module.exports = Product;
