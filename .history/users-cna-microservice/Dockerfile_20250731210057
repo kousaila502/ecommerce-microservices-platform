@@ -17,10 +17,10 @@ RUN pipenv install
 EXPOSE 9090
 
 # Copy .env first to bust cache when it changes
-# COPY .env .  # Commented out - use Railway environment variables
+COPY .env .
 
 # copy the rest of the app
 COPY . .
 
 # execute the command python main.py (in the WORKDIR) to start the app
-CMD ["pipenv", "run", "python", "app.py"]"# Force rebuild $(date)" 
+CMD ["pipenv", "run", "python", "app.py"]
