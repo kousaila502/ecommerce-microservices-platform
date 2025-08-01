@@ -20,7 +20,7 @@ app = FastAPI(
 )
 
 # Get CORS origins from environment variable
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,https://ecommerce-microservices-platform.vercel.app").split(",")
 cors_origins = [origin.strip() for origin in cors_origins]  # Remove whitespace
 
 print(f"CORS Origins: {cors_origins}")

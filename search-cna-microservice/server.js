@@ -1,7 +1,16 @@
 var express = require('express');
 var request = require('request');
+var cors = require('cors');
 
 var app = express();
+
+app.use(cors({
+	origin: [
+		'http://localhost:3000',
+		'https://ecommerce-microservices-platform.vercel.app'
+	],
+	credentials: true
+}));
 
 var port = Number(process.env.PORT || 4000);
 var apiServerHost = (process.env.ELASTIC_URL || 'http://127.0.0.1:9200')
