@@ -1,6 +1,6 @@
 # Igrone .env for sensitive data
 .env
-.env.devlopment.local
+.env.devlo
 # Package Files #
 *.jar
 *.war
