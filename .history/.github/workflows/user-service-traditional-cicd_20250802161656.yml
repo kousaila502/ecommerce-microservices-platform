@@ -483,68 +483,68 @@ jobs:
 
     steps:
       - name: Calculate total pipeline metrics with validation
-        shell: bash
-        run: |
-          echo "📊 TRADITIONAL CI/CD PIPELINE METRICS SUMMARY"
-          echo "============================================"
-          ANALYSIS_DURATION=${{ needs.source-code-analysis.outputs.analysis-duration }}
-          BUILD_DURATION=${{ needs.build-and-test.outputs.build-duration }}
-          APPROVAL_DURATION=${{ needs.manual-approval-code-review.outputs.approval-duration }}
-          DOCKER_DURATION=${{ needs.docker-build.outputs.build-duration }}
-          SECURITY_DURATION=${{ needs.manual-approval-security.outputs.security-duration }}
-          DEPLOY_DURATION=${{ needs.deploy-staging.outputs.deployment-duration }}
-          [ -z "$ANALYSIS_DURATION" ] && ANALYSIS_DURATION=45
-          [ -z "$BUILD_DURATION" ] && BUILD_DURATION=120
-          [ -z "$APPROVAL_DURATION" ] && APPROVAL_DURATION=180
-          [ -z "$DOCKER_DURATION" ] && DOCKER_DURATION=60
-          [ -z "$SECURITY_DURATION" ] && SECURITY_DURATION=420
-          [ -z "$DEPLOY_DURATION" ] && DEPLOY_DURATION=85
-          echo "🔍 Source Analysis: ${ANALYSIS_DURATION}s"
-          echo "🔨 Build & Test: ${BUILD_DURATION}s"
-          echo "🔐 Code Review Approval: ${APPROVAL_DURATION}s"
-          echo "🐳 Docker Build: ${DOCKER_DURATION}s"
-          echo "🔒 Security Approval: ${SECURITY_DURATION}s"
-          echo "🚀 Deployment: ${DEPLOY_DURATION}s"
-          TOTAL_DURATION=$((ANALYSIS_DURATION + BUILD_DURATION + APPROVAL_DURATION + DOCKER_DURATION + SECURITY_DURATION + DEPLOY_DURATION))
-          echo "⏱️ Total Pipeline Duration: ${TOTAL_DURATION}s"
-          echo "==========================================="
-          echo "📊 PUSHING PIPELINE SUMMARY METRICS"
-          echo "==========================================="
-          
-          echo "Pushing total duration..."
-          curl -X POST "http://${PROMETHEUS_PUSHGATEWAY}/metrics/job/cicd_pipeline_summary/instance/${PIPELINE_ID}" \
-            -H "Content-Type: text/plain" \
-            --data-raw "cicd_total_pipeline_duration_seconds ${TOTAL_DURATION}"
+  shell: bash
+  run: |
+    echo "📊 TRADITIONAL CI/CD PIPELINE METRICS SUMMARY"
+    echo "============================================"
+    ANALYSIS_DURATION=${{ needs.source-code-analysis.outputs.analysis-duration }}
+    BUILD_DURATION=${{ needs.build-and-test.outputs.build-duration }}
+    APPROVAL_DURATION=${{ needs.manual-approval-code-review.outputs.approval-duration }}
+    DOCKER_DURATION=${{ needs.docker-build.outputs.build-duration }}
+    SECURITY_DURATION=${{ needs.manual-approval-security.outputs.security-duration }}
+    DEPLOY_DURATION=${{ needs.deploy-staging.outputs.deployment-duration }}
+    [ -z "$ANALYSIS_DURATION" ] && ANALYSIS_DURATION=45
+    [ -z "$BUILD_DURATION" ] && BUILD_DURATION=120
+    [ -z "$APPROVAL_DURATION" ] && APPROVAL_DURATION=180
+    [ -z "$DOCKER_DURATION" ] && DOCKER_DURATION=60
+    [ -z "$SECURITY_DURATION" ] && SECURITY_DURATION=420
+    [ -z "$DEPLOY_DURATION" ] && DEPLOY_DURATION=85
+    echo "🔍 Source Analysis: ${ANALYSIS_DURATION}s"
+    echo "🔨 Build & Test: ${BUILD_DURATION}s"
+    echo "🔐 Code Review Approval: ${APPROVAL_DURATION}s"
+    echo "🐳 Docker Build: ${DOCKER_DURATION}s"
+    echo "🔒 Security Approval: ${SECURITY_DURATION}s"
+    echo "🚀 Deployment: ${DEPLOY_DURATION}s"
+    TOTAL_DURATION=$((ANALYSIS_DURATION + BUILD_DURATION + APPROVAL_DURATION + DOCKER_DURATION + SECURITY_DURATION + DEPLOY_DURATION))
+    echo "⏱️ Total Pipeline Duration: ${TOTAL_DURATION}s"
+    echo "==========================================="
+    echo "📊 PUSHING PIPELINE SUMMARY METRICS"
+    echo "==========================================="
+    
+    echo "Pushing total duration..."
+    curl -X POST "http://${PROMETHEUS_PUSHGATEWAY}/metrics/job/cicd_pipeline_summary/instance/${PIPELINE_ID}" \
+      -H "Content-Type: text/plain" \
+      --data-raw "cicd_total_pipeline_duration_seconds ${TOTAL_DURATION}"
 
-          echo "Pushing average duration..."  
-          AVG_DURATION=$((TOTAL_DURATION / 6))
-          curl -X POST "http://${PROMETHEUS_PUSHGATEWAY}/metrics/job/cicd_pipeline_summary/instance/${PIPELINE_ID}" \
-            -H "Content-Type: text/plain" \
-            --data-raw "cicd_avg_stage_duration_seconds ${AVG_DURATION}"
+    echo "Pushing average duration..."  
+    AVG_DURATION=$((TOTAL_DURATION / 6))
+    curl -X POST "http://${PROMETHEUS_PUSHGATEWAY}/metrics/job/cicd_pipeline_summary/instance/${PIPELINE_ID}" \
+      -H "Content-Type: text/plain" \
+      --data-raw "cicd_avg_stage_duration_seconds ${AVG_DURATION}"
 
-          echo "Pushing success count..."
-          curl -X POST "http://${PROMETHEUS_PUSHGATEWAY}/metrics/job/cicd_pipeline_summary/instance/${PIPELINE_ID}" \
-            -H "Content-Type: text/plain" \
-            --data-raw "cicd_pipeline_success_count 1"
-          
-          FAILURE_COUNT=0
-          if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
-            MANUAL_INTERVENTIONS=2
-          else
-            MANUAL_INTERVENTIONS=3
-          fi
-          if [ "${{ github.event.inputs.failure_simulation }}" != "none" ] && [ -n "${{ github.event.inputs.failure_simulation }}" ]; then FAILURE_COUNT=1; fi
-          
-          echo "Pushing failure count..."
-          curl -X POST "http://${PROMETHEUS_PUSHGATEWAY}/metrics/job/cicd_pipeline_summary/instance/${PIPELINE_ID}" \
-            -H "Content-Type: text/plain" \
-            --data-raw "cicd_pipeline_failure_count ${FAILURE_COUNT}"
-            
-          echo "Pushing manual interventions..."
-          curl -X POST "http://${PROMETHEUS_PUSHGATEWAY}/metrics/job/cicd_pipeline_summary/instance/${PIPELINE_ID}" \
-            -H "Content-Type: text/plain" \
-            --data-raw "cicd_manual_interventions_final ${MANUAL_INTERVENTIONS}"
-          
-          echo "==========================================="
-          echo "📊 ALL PIPELINE SUMMARY METRICS PUSHED"
-          echo "==========================================="
+    echo "Pushing success count..."
+    curl -X POST "http://${PROMETHEUS_PUSHGATEWAY}/metrics/job/cicd_pipeline_summary/instance/${PIPELINE_ID}" \
+      -H "Content-Type: text/plain" \
+      --data-raw "cicd_pipeline_success_count 1"
+    
+    FAILURE_COUNT=0
+    if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
+      MANUAL_INTERVENTIONS=2
+    else
+      MANUAL_INTERVENTIONS=3
+    fi
+    if [ "${{ github.event.inputs.failure_simulation }}" != "none" ] && [ -n "${{ github.event.inputs.failure_simulation }}" ]; then FAILURE_COUNT=1; fi
+    
+    echo "Pushing failure count..."
+    curl -X POST "http://${PROMETHEUS_PUSHGATEWAY}/metrics/job/cicd_pipeline_summary/instance/${PIPELINE_ID}" \
+      -H "Content-Type: text/plain" \
+      --data-raw "cicd_pipeline_failure_count ${FAILURE_COUNT}"
+      
+    echo "Pushing manual interventions..."
+    curl -X POST "http://${PROMETHEUS_PUSHGATEWAY}/metrics/job/cicd_pipeline_summary/instance/${PIPELINE_ID}" \
+      -H "Content-Type: text/plain" \
+      --data-raw "cicd_manual_interventions_final ${MANUAL_INTERVENTIONS}"
+    
+    echo "==========================================="
+    echo "📊 ALL PIPELINE SUMMARY METRICS PUSHED"
+    echo "==========================================="
