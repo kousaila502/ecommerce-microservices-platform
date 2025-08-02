@@ -1,4 +1,4 @@
-name: User Service - GitOps CI/CD with Argo CD Automation
+name: User Service - GitOps Pipeline
 
 on:
   push:
