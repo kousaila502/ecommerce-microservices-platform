@@ -30,7 +30,7 @@ on:
 env:
   IMAGE_NAME: kousaila/user-service
   SERVICE_PATH: users-cna-microservice
-  PROMETHEUS_PUSHGATEWAY: 34.152.34.95:9091  # FIXED: External IP instead of internal DNS
+  PROMETHEUS_PUSHGATEWAY: 35.203.23.28:9091 # FIXED: External IP instead of internal DNS
   PIPELINE_ID: ${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
