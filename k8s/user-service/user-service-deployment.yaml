@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: kousaila/user-service:gitops-e32a54c
+          image: kousaila/user-service:gitops-51548a1
           imagePullPolicy: Always
           env:
             - name: DATABASE_URL
