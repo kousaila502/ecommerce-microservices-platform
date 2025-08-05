@@ -38,3 +38,5 @@ For Windows,
 
 Build docker image,
 `docker build -t cart:latest .`
+
+just for new pipline
