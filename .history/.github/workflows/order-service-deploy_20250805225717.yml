@@ -386,7 +386,7 @@ jobs:
       sync-status: ${{ steps.sync-metrics.outputs.sync-status }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout code  # ADD THIS!
         uses: actions/checkout@v4
       - name: Simulate Argo CD sync monitoring
         run: |
@@ -438,8 +438,6 @@ jobs:
     if: always()
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
       - name: Calculate total GitOps pipeline metrics with research comparison
         shell: bash
         run: |

@@ -440,6 +440,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Calculate total GitOps pipeline metrics with research comparison
         shell: bash
         run: |
