@@ -81,7 +81,7 @@ dbo.connectToServer(function (err) {
     //await loadData();
     
     console.log('🚀 Product Service ready!');
-    console.log(`📊 YES API endpoints available at http://localhost:${PORT}`);
+    console.log(`📊 API endpoints available at http://localhost:${PORT}`);
     console.log('   GET /products - Get all products');
     console.log('   GET /products/:id - Get product by ID');
     console.log('   GET /products/sku/:sku - Get product by SKU');
