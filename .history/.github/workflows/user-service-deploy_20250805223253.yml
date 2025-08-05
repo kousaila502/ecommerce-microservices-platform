@@ -37,6 +37,50 @@ env:
   PROMETHEUS_PUSHGATEWAY: https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push
   PIPELINE_ID: ${{ github.run_id }}-${{ github.run_attempt }}
 
+- name: Setup Metrics Push Function
+        run: |
+          cat << 'EOF' > /tmp/push_metric.sh
+          #!/bin/bash
+          push_metric() {
+            local metric_name=$1
+            local metric_value=$2
+            local job_name=${3:-"gitops_pipeline"}
+            local instance=${4:-"$PIPELINE_ID"}
+            local timestamp=$(date +%s)000000000
+            
+            json_payload=$(cat <<JSON
+          {
+            "resourceMetrics": [{
+              "scopeMetrics": [{
+                "metrics": [{
+                  "name": "${metric_name}",
+                  "gauge": {
+                    "dataPoints": [{
+                      "asDouble": ${metric_value},
+                      "timeUnixNano": ${timestamp},
+                      "attributes": [
+                        {"key": "job", "value": {"stringValue": "${job_name}"}},
+                        {"key": "instance", "value": {"stringValue": "${instance}"}}
+                      ]
+                    }]
+                  }
+                }]
+              }]
+            }]
+          }
+          JSON
+          )
+            
+            curl -X POST https://otlp-gateway-prod-us-east-2.grafana.net/otlp/v1/metrics \
+              -H "Authorization: Basic $(echo -n '${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}' | base64 -w 0)" \
+              -H "Content-Type: application/json" \
+              -d "$json_payload" \
+              --silent --show-error
+          }
+          EOF
+          chmod +x /tmp/push_metric.sh
+          echo "source /tmp/push_metric.sh" >> $GITHUB_ENV
+
 jobs:
   # =============================================================================
   # GITOPS PIPELINE INITIALIZATION & METRICS SETUP
@@ -80,8 +124,8 @@ jobs:
           echo ""
           
           # Push GitOps-specific metrics
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_pipeline_start_timestamp" "1721851200"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_pipeline_info" "1"
+          printf "gitops_pipeline_start_timestamp 1721851200\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_pipeline/instance/${PIPELINE_ID} --data-binary @-
+          printf "gitops_pipeline_info 1\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_pipeline/instance/${PIPELINE_ID} --data-binary @-
           echo "========================================"
 
   # =============================================================================
@@ -137,9 +181,9 @@ jobs:
           echo "Analysis Duration: ${DURATION}s"
           echo ""
           
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_source_analysis_duration_seconds" "${DURATION}"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_source_lines_of_code" "${{ steps.analysis.outputs.lines-of-code }}"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_source_complexity_score" "${{ steps.analysis.outputs.complexity }}"
+          printf "gitops_source_analysis_duration_seconds ${DURATION}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_analysis/instance/${PIPELINE_ID} --data-binary @-
+          printf "gitops_source_lines_of_code ${{ steps.analysis.outputs.lines-of-code }}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_analysis/instance/${PIPELINE_ID} --data-binary @-
+          printf "gitops_source_complexity_score ${{ steps.analysis.outputs.complexity }}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_analysis/instance/${PIPELINE_ID} --data-binary @-
           echo "========================================"
 
   # =============================================================================
@@ -220,10 +264,10 @@ jobs:
           echo "📊 PUSHING GITOPS BUILD & TEST METRICS"
           echo "========================================"
           
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_build_duration_seconds" "${BUILD_DURATION}"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_test_duration_seconds" "${TEST_DURATION}"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_unit_tests_total" "42"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_integration_tests_total" "18"
+          printf "gitops_build_duration_seconds ${BUILD_DURATION}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_build/instance/${PIPELINE_ID} --data-binary @-
+          printf "gitops_test_duration_seconds ${TEST_DURATION}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_build/instance/${PIPELINE_ID} --data-binary @-
+          printf "gitops_unit_tests_total 42\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_build/instance/${PIPELINE_ID} --data-binary @-
+          printf "gitops_integration_tests_total 18\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_build/instance/${PIPELINE_ID} --data-binary @-
           echo "========================================"
 
   # =============================================================================
@@ -319,7 +363,7 @@ jobs:
         if: github.event.inputs.failure_simulation == 'manifest_failure'
         run: |
           echo "🚨 SIMULATING GITOPS MANIFEST FAILURE FOR RESEARCH"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_manifest_failures_total" "1"
+          printf "gitops_manifest_failures_total 1\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_manifest/instance/${PIPELINE_ID} --data-binary @-
           exit 1
 
       - name: Update Kubernetes manifest with new image tag
@@ -365,9 +409,9 @@ jobs:
           echo "📊 PUSHING GITOPS MANIFEST METRICS"
           echo "========================================"
           
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_manifest_update_duration_seconds" "${MANIFEST_DURATION}"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_manual_interventions_total" "0"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_deployment_method" "1"
+          printf "gitops_manifest_update_duration_seconds ${MANIFEST_DURATION}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_manifest/instance/${PIPELINE_ID} --data-binary @-
+          printf "gitops_manual_interventions_total 0\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_manifest/instance/${PIPELINE_ID} --data-binary @-
+          printf "gitops_deployment_method 1\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_manifest/instance/${PIPELINE_ID} --data-binary @-
           echo "✅ GitOps manifest metrics pushed successfully"
 
   # =============================================================================
@@ -382,8 +426,6 @@ jobs:
       sync-status: ${{ steps.sync-metrics.outputs.sync-status }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
       - name: Simulate Argo CD sync monitoring
         run: |
           echo "🔄 MONITORING ARGO CD AUTOMATIC SYNC"
@@ -399,7 +441,7 @@ jobs:
         if: github.event.inputs.failure_simulation == 'argocd_sync_failure'
         run: |
           echo "🚨 SIMULATING ARGO CD SYNC FAILURE FOR RESEARCH"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_argocd_sync_failures_total" "1"
+          printf "gitops_argocd_sync_failures_total 1\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_argocd/instance/${PIPELINE_ID} --data-binary @-
           exit 1
 
       - name: Calculate Argo CD sync metrics and push to Prometheus
@@ -412,8 +454,8 @@ jobs:
           echo "📊 PUSHING ARGO CD SYNC METRICS"
           echo "========================================"
           
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_argocd_sync_duration_seconds" "${SYNC_DURATION}"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_deployment_success_argocd" "1"
+          printf "gitops_argocd_sync_duration_seconds ${SYNC_DURATION}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_argocd/instance/${PIPELINE_ID} --data-binary @-
+          printf "gitops_deployment_success_argocd 1\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_argocd/instance/${PIPELINE_ID} --data-binary @-
           echo "✅ Argo CD sync metrics pushed successfully"
 
   # =============================================================================
@@ -434,8 +476,6 @@ jobs:
     if: always()
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
       - name: Calculate total GitOps pipeline metrics with research comparison
         shell: bash
         run: |
@@ -474,12 +514,12 @@ jobs:
           echo "==========================================="
           
           # Push comprehensive GitOps metrics
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_total_pipeline_duration_seconds" "${TOTAL_DURATION}"
+          printf "gitops_total_pipeline_duration_seconds ${TOTAL_DURATION}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_pipeline_summary/instance/${PIPELINE_ID} --data-binary @-
 
           AVG_DURATION=$((TOTAL_DURATION / 5))
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_avg_stage_duration_seconds" "${AVG_DURATION}"
+          printf "gitops_avg_stage_duration_seconds ${AVG_DURATION}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_pipeline_summary/instance/${PIPELINE_ID} --data-binary @-
 
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_pipeline_success_count" "1"
+          printf "gitops_pipeline_success_count 1\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_pipeline_summary/instance/${PIPELINE_ID} --data-binary @-
           
           FAILURE_COUNT=0
           MANUAL_INTERVENTIONS=0
@@ -489,9 +529,9 @@ jobs:
             FAILURE_COUNT=1
           fi
           
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_pipeline_failure_count" "${FAILURE_COUNT}"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_manual_interventions_final" "${MANUAL_INTERVENTIONS}"
-          GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_automation_level_percent" "${AUTOMATION_LEVEL}"
+          printf "gitops_pipeline_failure_count ${FAILURE_COUNT}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_pipeline_summary/instance/${PIPELINE_ID} --data-binary @-
+          printf "gitops_manual_interventions_final ${MANUAL_INTERVENTIONS}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_pipeline_summary/instance/${PIPELINE_ID} --data-binary @-
+          printf "gitops_automation_level_percent ${AUTOMATION_LEVEL}\n" | curl -X POST -u "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push/job/gitops_pipeline_summary/instance/${PIPELINE_ID} --data-binary @-
           
           echo "==========================================="
           echo "📊 ALL GITOPS PIPELINE SUMMARY METRICS PUSHED"

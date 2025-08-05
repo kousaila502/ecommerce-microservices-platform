@@ -383,7 +383,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+    uses: actions/checkout@v4
       - name: Simulate Argo CD sync monitoring
         run: |
           echo "🔄 MONITORING ARGO CD AUTOMATIC SYNC"

@@ -44,7 +44,7 @@ async def health_check():
 @app.get("/")
 async def root():
     return {
-        "message": "Order Service API is running",
+        "message": "Order Service API is running", ,
         "service": settings.service_name,
         "docs": "/docs",
         "health": "/health"
