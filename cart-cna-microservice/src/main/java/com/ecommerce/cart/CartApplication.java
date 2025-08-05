@@ -13,3 +13,4 @@ public class CartApplication {
 }
 
 //deployment
+//docker build -t cart:latest .
