@@ -34,7 +34,7 @@ app.include_router(admin_orders.router)
 @app.get("/health")
 async def health_check():
     return {
-        "status": "healthy up",
+        "status": "healthy",
         "service": settings.service_name,
         "version": "TEST-V3-Kousaila-🔥",
         "timestamp": "2025-07-13-15:00"
