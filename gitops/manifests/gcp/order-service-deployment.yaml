@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service-deployment
+  labels:
+    app: order-service
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0  # Keep old pod running during update
+      maxSurge: 1        # Allow 1 new pod to be created
+  replicas: 1            # Changed from 2 to 1 (same as user service)
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: kousaila/order-service:latest  # Updated to follow naming convention
+          imagePullPolicy: Always              # Changed from Never to Always
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://neondb_owner:npg_8kBPvMTquH2m@ep-cold-breeze-aedi5hre-pooler.c-2.us-east-2.aws.neon.tech/neondb"  # Updated to use Neon PostgreSQL
+            - name: USER_SERVICE_URL
+              value: http://user-service:9090
+            - name: CART_SERVICE_URL
+              value: http://cart-service:8080
+            - name: PRODUCT_SERVICE_URL
+              value: http://product-service:3001
+            - name: SECRET_KEY
+              value: your-super-secret-jwt-key-change-in-production
+            - name: ALGORITHM
+              value: HS256
+            - name: ACCESS_TOKEN_EXPIRE_MINUTES  # Added to match user service
+              value: "30"
+            - name: CORS_ORIGINS
+              value: "http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:50951"  # Updated to match user service
+          ports:
+            - containerPort: 8081
+          resources:
+            requests:
+              memory: "64Mi"   # Reduced from 256Mi to match user service
+              cpu: "50m"       # Reduced from 200m to match user service
+            limits:
+              memory: "128Mi"  # Reduced from 512Mi to match user service
+              cpu: "100m"      # Reduced from 400m to match user service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+spec:
+  selector:
+    app: order-service
+  ports:
+    - port: 8081
+      targetPort: 8081
+  type: ClusterIP

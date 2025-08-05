@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-service-gitops
+  namespace: argocd
+  labels:
+    app: user-service
+    methodology: gitops
+    pipeline-type: argocd
+    research-phase: multicloud-gitops-research
+    managed-by: argocd
+    gitops.research/automation-level: "100"
+    gitops.research/rollback-enabled: "true"
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/kousaila502/ecommerce-microservices-platform.git'
+    targetRevision: multicloud-gitops-research  # ← UPDATED BRANCH
+    path: gitops/manifests/gcp                   # ← UPDATED PATH
+    directory:
+      recurse: true
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: research-apps                     # ← UPDATED NAMESPACE
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true                     # ← CHANGED TO CREATE NAMESPACE
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - RespectIgnoreDifferences=true
+      - Replace=true
+  revisionHistoryLimit: 10
