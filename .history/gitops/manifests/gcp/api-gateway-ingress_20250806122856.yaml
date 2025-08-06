@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-gateway-ingress
+  namespace: research-apps
+  labels:
+    app: api-gateway
+    methodology: gitops
+    managed-by: argocd
+    research-phase: multicloud-gitops-research
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # Remove trailing slash and add CORS headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Access-Control-Allow-Origin: *";
+      more_set_headers "Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS";
+      more_set_headers "Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With";
+spec:
+  rules:
+  - host: api.techmart-research.com  # Optional: you can use IP directly too
+    http:
+      paths:
+      # User Service routes
+      - path: /user(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 9090
+      # Order Service routes  
+      - path: /order(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: order-service
+            port:
+              number: 8081
+      # Health check endpoint
+      - path: /health
+        pathType: Exact
+        backend:
+          service:
+            name: user-service  # Default to user service for health
+            port:
+              number: 9090
