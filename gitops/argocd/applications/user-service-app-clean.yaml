@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: user-service-gitops
+  name: user-service-app-clean
   namespace: argocd
   labels:
     app: user-service
     methodology: gitops
     pipeline-type: argocd
-    research-phase: multicloud-gitops-research
     managed-by: argocd
+    research-phase: multicloud-gitops-research
     gitops.research/automation-level: "100"
     gitops.research/rollback-enabled: "true"
 spec:
@@ -19,7 +19,7 @@ spec:
     path: gitops/manifests/gcp
     directory:
       recurse: true
-      include: 'user-service-deployment.yaml'  # ✅ updated: removed api-gateway-ingress.yaml
+      include: 'user-service-deployment.yaml'  # ✅ No ingress here
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: research-apps
