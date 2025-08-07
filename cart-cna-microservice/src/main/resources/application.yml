@@ -8,14 +8,19 @@ spring:
     password: ${SPRING_REDIS_PASSWORD:}
     ssl: ${SPRING_REDIS_SSL:false}
     database: ${SPRING_REDIS_DATABASE:0}
-    timeout: 5000ms          # Reduced timeout for faster failure
-    connect-timeout: 3000ms  # Reduced connection timeout
+    timeout: 5000ms
+    connect-timeout: 3000ms
     lettuce:
       pool:
         max-active: 8
         max-idle: 8
         min-idle: 0
       shutdown-timeout: 1000ms
+
+  # CRITICAL: Force web application type
+  main:
+    web-application-type: servlet
+
   # Add circuit breaker and retry configuration
   cloud:
     circuitbreaker:
@@ -30,7 +35,8 @@ jwt:
   expiration: ${JWT_EXPIRATION:1800000}
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${PORT:8080}
+  address: 0.0.0.0
   servlet:
     context-path: /
 
@@ -69,7 +75,6 @@ management:
   endpoint:
     health:
       show-details: always
-      # Don't fail startup if health checks fail
       probes:
         enabled: true
   endpoints:
@@ -77,13 +82,11 @@ management:
       exposure:
         include: health,info,metrics
   health:
-    # Configure health indicators to not fail startup
+    # FIXED: Enable default health indicators
+    defaults:
+      enabled: true
     redis:
       enabled: true
-    # Make health checks non-blocking
-    defaults:
-      enabled: false
-    # Enable specific health checks but don't fail on them
     ping:
       enabled: true
     diskspace:
@@ -94,7 +97,6 @@ logging:
     root: INFO
     org.springframework.web: INFO
     com.ecommerce.cart: DEBUG
-    # Reduce Redis connection error noise
     org.springframework.data.redis: WARN
     io.lettuce.core: WARN
 
