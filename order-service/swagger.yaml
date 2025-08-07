@@ -1,0 +1,634 @@
+openapi: 3.0.3
+info:
+  title: Order Service API - Live System Integration
+  description: |
+    E-commerce Order Management Service with comprehensive live system integration
+
+    ## 🌐 Live System Architecture
+    This Order Service integrates with a multi-cloud microservices ecosystem:
+
+    ### Frontend & Gateway
+    - **Frontend**: Vercel - https://ecommerce-microservices-platform.vercel.app
+    - **API Gateway**: GKE Kubernetes - http://34.118.167.199.nip.io
+    - **Controller**: Azure Container Instance - http://techmart-controller.uksouth.azurecontainer.io:3000
+
+    ### External Services
+    - **User Service**: GKE Kubernetes (via API Gateway)
+    - **Cart Service**: Heroku Platform
+    - **Product Service**: Heroku Platform  
+    - **Search Service**: Render Platform
+
+    ### Data Layer
+    - **Database**: Neon PostgreSQL (AWS us-east-2)
+    - **Cache**: Upstash Redis
+
+    ## 🎯 Features
+    - Order creation and management
+    - Multi-platform service integration
+    - Comprehensive health monitoring
+    - JWT authentication
+    - CORS support for live frontend
+    - Real-time connectivity checks
+    - Platform-aware error handling
+
+    ## 🔍 Health Monitoring
+    This service provides extensive health check endpoints to monitor all live system dependencies:
+    - Basic health check
+    - Database connectivity (Neon PostgreSQL)
+    - Cache connectivity (Upstash Redis)
+    - External service connectivity (GKE, Heroku, Render)
+    - Configuration validation
+    - Live system status overview
+
+  version: "2.0.0-LIVE"
+  contact:
+    name: Order Service Team
+    email: support@ecommerce-platform.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8081
+    description: Development server
+  - url: https://your-order-service.herokuapp.com
+    description: Production server (Heroku)
+  - url: http://34.118.167.199.nip.io/order
+    description: Live system via API Gateway (GKE)
+
+paths:
+  /:
+    get:
+      summary: Service information with live system status
+      description: Get comprehensive service information and live system integration details
+      tags:
+        - Service Info
+      responses:
+        "200":
+          description: Service information with live system details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Order Service API is running with Live System Integration"
+                  service:
+                    type: string
+                    example: "order-service"
+                  version:
+                    type: string
+                    example: "2.0.0-LIVE"
+                  live_system:
+                    type: object
+                    properties:
+                      frontend:
+                        type: string
+                        example: "https://ecommerce-microservices-platform.vercel.app"
+                      api_gateway:
+                        type: string
+                        example: "http://34.118.167.199.nip.io"
+                      controller:
+                        type: string
+                        example: "http://techmart-controller.uksouth.azurecontainer.io:3000"
+                  platform_status:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        example: "Neon PostgreSQL"
+                      cache:
+                        type: string
+                        example: "Upstash Redis"
+                      user_service:
+                        type: string
+                        example: "GKE Kubernetes"
+                      cart_service:
+                        type: string
+                        example: "Heroku"
+                      product_service:
+                        type: string
+                        example: "Heroku"
+                      search_service:
+                        type: string
+                        example: "Render"
+
+  /health:
+    get:
+      summary: Basic health check
+      description: Simple health check endpoint with live system info
+      tags:
+        - Health Monitoring
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BasicHealthResponse"
+
+  /health/connectivity:
+    get:
+      summary: Live system connectivity check
+      description: Complete health check for all live system dependencies
+      tags:
+        - Health Monitoring
+      responses:
+        "200":
+          description: Connectivity status for all live system services
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveSystemConnectivityResponse"
+
+  /health/postgres:
+    get:
+      summary: Neon PostgreSQL health check
+      description: Check Neon PostgreSQL database connectivity
+      tags:
+        - Health Monitoring
+      responses:
+        "200":
+          description: Neon PostgreSQL connectivity status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseHealthResponse"
+
+  /health/redis:
+    get:
+      summary: Upstash Redis health check
+      description: Check Upstash Redis cache connectivity
+      tags:
+        - Health Monitoring
+      responses:
+        "200":
+          description: Upstash Redis connectivity status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CacheHealthResponse"
+
+  /health/user-service:
+    get:
+      summary: User Service (GKE) health check
+      description: Check User Service connectivity via API Gateway
+      tags:
+        - Health Monitoring
+      responses:
+        "200":
+          description: User Service connectivity status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalServiceHealthResponse"
+
+  /health/cart-service:
+    get:
+      summary: Cart Service (Heroku) health check
+      description: Check Cart Service connectivity on Heroku
+      tags:
+        - Health Monitoring
+      responses:
+        "200":
+          description: Cart Service connectivity status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalServiceHealthResponse"
+
+  /health/product-service:
+    get:
+      summary: Product Service (Heroku) health check
+      description: Check Product Service connectivity on Heroku
+      tags:
+        - Health Monitoring
+      responses:
+        "200":
+          description: Product Service connectivity status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalServiceHealthResponse"
+
+  /health/search-service:
+    get:
+      summary: Search Service (Render) health check
+      description: Check Search Service connectivity on Render
+      tags:
+        - Health Monitoring
+      responses:
+        "200":
+          description: Search Service connectivity status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalServiceHealthResponse"
+
+  /health/info:
+    get:
+      summary: Live system configuration info
+      description: Get comprehensive service configuration and live system environment information
+      tags:
+        - Health Monitoring
+      responses:
+        "200":
+          description: Live system configuration details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveSystemInfoResponse"
+
+  /orders:
+    get:
+      summary: Get user orders
+      description: Retrieve orders for the authenticated user
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of user orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "401":
+          description: Unauthorized
+
+    post:
+      summary: Create new order
+      description: Create a new order from user's cart
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderCreate"
+      responses:
+        "201":
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+
+  /orders/{order_id}:
+    get:
+      summary: Get order by ID
+      description: Retrieve a specific order by ID
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Order not found
+        "401":
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    BasicHealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+        service:
+          type: string
+          example: "order-service"
+        version:
+          type: string
+          example: "2.0.0-LIVE"
+        timestamp:
+          type: string
+          format: date-time
+        environment:
+          type: string
+          example: "development"
+        uptime:
+          type: string
+          example: "Service is running"
+        live_system:
+          type: object
+          properties:
+            frontend:
+              type: string
+              example: "https://ecommerce-microservices-platform.vercel.app"
+            api_gateway:
+              type: string
+              example: "http://34.118.167.199.nip.io"
+            controller:
+              type: string
+              example: "http://techmart-controller.uksouth.azurecontainer.io:3000"
+
+    LiveSystemConnectivityResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded]
+        service:
+          type: string
+        version:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        connectivity:
+          type: object
+          properties:
+            postgres:
+              $ref: "#/components/schemas/ConnectionStatus"
+            redis:
+              $ref: "#/components/schemas/ConnectionStatus"
+            user_service:
+              $ref: "#/components/schemas/ConnectionStatus"
+            cart_service:
+              $ref: "#/components/schemas/ConnectionStatus"
+            product_service:
+              $ref: "#/components/schemas/ConnectionStatus"
+            search_service:
+              $ref: "#/components/schemas/ConnectionStatus"
+        summary:
+          type: object
+          properties:
+            total_services:
+              type: integer
+            connected:
+              type: integer
+            not_configured:
+              type: integer
+            failed:
+              type: integer
+            warnings:
+              type: integer
+            timeouts:
+              type: integer
+        live_system_status:
+          type: object
+          properties:
+            postgres_neon:
+              type: string
+            redis_upstash:
+              type: string
+            user_service_gke:
+              type: string
+            cart_service_heroku:
+              type: string
+            product_service_heroku:
+              type: string
+            search_service_render:
+              type: string
+
+    DatabaseHealthResponse:
+      type: object
+      properties:
+        service:
+          type: string
+          example: "PostgreSQL Database (Neon)"
+        timestamp:
+          type: string
+          format: date-time
+        provider:
+          type: string
+          example: "Neon"
+        host:
+          type: string
+          example: "ep-cold-breeze-aedi5hre-pooler.c-2.us-east-2.aws.neon.tech"
+        result:
+          $ref: "#/components/schemas/ConnectionStatus"
+
+    CacheHealthResponse:
+      type: object
+      properties:
+        service:
+          type: string
+          example: "Redis Cache (Upstash)"
+        timestamp:
+          type: string
+          format: date-time
+        provider:
+          type: string
+          example: "Upstash"
+        host:
+          type: string
+          example: "discrete-raccoon-6606.upstash.io:6379"
+        result:
+          $ref: "#/components/schemas/ConnectionStatus"
+
+    ExternalServiceHealthResponse:
+      type: object
+      properties:
+        service:
+          type: string
+          example: "Cart Service (Heroku)"
+        timestamp:
+          type: string
+          format: date-time
+        provider:
+          type: string
+          example: "Heroku Platform"
+        url:
+          type: string
+          example: "https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com"
+        result:
+          $ref: "#/components/schemas/ConnectionStatus"
+
+    LiveSystemInfoResponse:
+      type: object
+      properties:
+        service:
+          type: string
+        version:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        environment:
+          type: string
+        live_system:
+          type: object
+          properties:
+            frontend:
+              type: string
+            api_gateway:
+              type: string
+            controller:
+              type: string
+            services:
+              type: object
+        platforms:
+          type: object
+          properties:
+            frontend:
+              type: object
+              properties:
+                platform:
+                  type: string
+                  example: "Vercel"
+                url:
+                  type: string
+            database:
+              type: object
+              properties:
+                platform:
+                  type: string
+                  example: "Neon PostgreSQL"
+                provider:
+                  type: string
+                  example: "Neon"
+        features:
+          type: array
+          items:
+            type: string
+          example:
+            - "Order Management"
+            - "Live System Integration"
+            - "Multi-Cloud Architecture"
+            - "PostgreSQL Database (Neon)"
+            - "Redis Caching (Upstash)"
+            - "Platform-Aware Connectivity"
+
+    ConnectionStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [connected, failed, warning, timeout, not_configured]
+        error:
+          type: string
+        response_time:
+          type: number
+        service_info:
+          type: object
+        provider:
+          type: string
+          example: "Heroku Platform"
+        url:
+          type: string
+        endpoint:
+          type: string
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "order_123"
+        order_number:
+          type: string
+          example: "ORD-20250807-ABC123"
+        user_id:
+          type: integer
+          example: 1
+        status:
+          type: string
+          enum: [pending, processing, shipped, delivered, cancelled]
+          example: "pending"
+        total_amount:
+          type: number
+          format: decimal
+          example: 99.99
+        created_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "item_456"
+        product_id:
+          type: string
+          example: "prod_789"
+        quantity:
+          type: integer
+          example: 2
+        unit_price:
+          type: number
+          format: decimal
+          example: 49.99
+        total_price:
+          type: number
+          format: decimal
+          example: 99.98
+
+    OrderCreate:
+      type: object
+      required:
+        - shipping_address
+        - payment_method
+      properties:
+        shipping_address:
+          type: object
+          properties:
+            street:
+              type: string
+              example: "123 Main St"
+            city:
+              type: string
+              example: "New York"
+            state:
+              type: string
+              example: "NY"
+            zip_code:
+              type: string
+              example: "10001"
+            country:
+              type: string
+              example: "USA"
+        payment_method:
+          type: string
+          example: "credit_card"
+        notes:
+          type: string
+          example: "Please deliver to front door"
+
+tags:
+  - name: Service Info
+    description: Basic service information and live system status
+  - name: Health Monitoring
+    description: Health check and monitoring endpoints for live system
+  - name: Orders
+    description: Order management operations
+
+externalDocs:
+  description: Live System Architecture
+  url: https://ecommerce-microservices-platform.vercel.app
