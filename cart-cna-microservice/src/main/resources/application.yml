@@ -21,6 +21,31 @@ spring:
   main:
     web-application-type: reactive
 
+  # ✅ CORS Configuration for Frontend Access
+  webflux:
+    cors:
+      enable: true
+      path-pattern: "/**"
+      allowed-origins:
+        - "https://ecommerce-microservices-platform.vercel.app"
+        - "http://localhost:3000"
+        - "http://localhost:8080"
+        - "http://localhost:3001"
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      allowed-headers:
+        - Content-Type
+        - Authorization
+        - X-Requested-With
+        - Accept
+        - Origin
+      allow-credentials: false
+      max-age: 3600
+
   # Add circuit breaker and retry configuration
   cloud:
     circuitbreaker:
