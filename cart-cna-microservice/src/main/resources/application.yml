@@ -19,7 +19,7 @@ spring:
 
   # CRITICAL: Force web application type
   main:
-    web-application-type: servlet
+    web-application-type: reactive
 
   # Add circuit breaker and retry configuration
   cloud:
