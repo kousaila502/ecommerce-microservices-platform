@@ -1,4 +1,91 @@
+# ==============================================
+# USER SERVICE .gitignore
+# Python FastAPI + PostgreSQL
+# ==============================================
+
+# Environment Variables (CRITICAL - Never commit secrets!)
+.env
+.env.local
+.env.production
+.env.staging
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Database
+*.db
+*.sqlite3
+*.sqlite
+db.sqlite3
+
+# Logs
+logs/
+*.log
+
+# OS generated files
 .DS_Store
-/venv/
-/.vscode/
-/test.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Security - Never commit these!
+secrets.txt
+credentials.json
+service-account-key.json
+*.pem
+*.key
+*.crt
+
+# Live System Credentials
+neon_credentials.json
+gke_credentials.json
+
+# Local configuration overrides
+local_config.py
+
+# Pipenv
+Pipfile.lock
+
+# Pytest
+.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/
