@@ -54,6 +54,9 @@ dependencies {
     testImplementation 'io.projectreactor:reactor-test'
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
+    
+    // Add SpringDoc OpenAPI for Swagger UI
+    implementation 'org.springdoc:springdoc-openapi-webflux-ui:1.7.0'
 }
 
 dependencyManagement {

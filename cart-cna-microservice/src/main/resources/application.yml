@@ -1,19 +1,131 @@
 spring:
   redis:
+    # Primary connection method - URL format with environment variables
+    url: ${SPRING_REDIS_URL:redis://localhost:6379}
+    # Fallback individual properties for logging/health checks
     host: ${SPRING_REDIS_HOST:localhost}
     port: ${SPRING_REDIS_PORT:6379}
-    password: ${SPRING_REDIS_PASSWORD:password123}
+    password: ${SPRING_REDIS_PASSWORD:}
+    ssl: ${SPRING_REDIS_SSL:false}
+    database: ${SPRING_REDIS_DATABASE:0}
+    timeout: 5000ms          # Reduced timeout for faster failure
+    connect-timeout: 3000ms  # Reduced connection timeout
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+      shutdown-timeout: 1000ms
+  # Add circuit breaker and retry configuration
+  cloud:
+    circuitbreaker:
+      resilience4j:
+        enabled: true
+    loadbalancer:
+      retry:
+        enabled: true
 
-# JWT Configuration (must match user service)
 jwt:
-  secret: ${JWT_SECRET:your-super-secret-jwt-key-change-in-production}
+  secret: ${JWT_SECRET:change-me-in-production}
   expiration: ${JWT_EXPIRATION:1800000}
 
-# Server configuration
 server:
   port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
 
-# External services
 services:
   user-service:
-    url: ${USER_SERVICE_URL:http://localhost:9090}
+    url: ${USER_SERVICE_URL:http://localhost:9090/user}
+    timeout: 5000ms
+    retry:
+      max-attempts: 3
+      delay: 1000ms
+  product-service:
+    url: ${PRODUCT_SERVICE_URL:http://localhost:9091}
+    timeout: 5000ms
+    retry:
+      max-attempts: 3
+      delay: 1000ms
+
+# Resilience configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      userService:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+      productService:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+      redis:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+
+management:
+  endpoint:
+    health:
+      show-details: always
+      # Don't fail startup if health checks fail
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  health:
+    # Configure health indicators to not fail startup
+    redis:
+      enabled: true
+    # Make health checks non-blocking
+    defaults:
+      enabled: false
+    # Enable specific health checks but don't fail on them
+    ping:
+      enabled: true
+    diskspace:
+      enabled: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    com.ecommerce.cart: DEBUG
+    # Reduce Redis connection error noise
+    org.springframework.data.redis: WARN
+    io.lettuce.core: WARN
+
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    try-it-out-enabled: true
+    filter: true
+  show-actuator: true
+  group-configs:
+    - group: cart-api
+      display-name: Cart Service API
+      paths-to-match: 
+        - /cart/**
+    - group: health-api
+      display-name: Health Check API
+      paths-to-match:
+        - /health/**
+
+---
+
+info:
+  app:
+    name: Cart Service
+    description: Cart microservice with real user and product validation
+    version: 3.0.0
+    environment: ${NODE_ENV:development}
