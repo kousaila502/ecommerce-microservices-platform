@@ -1,4 +1,20 @@
-.vscode
-.DS_Store".history/" 
-".history/" 
-".history/" 
+# VS Code Files 
+.vscode/ 
+.DS_Store 
+.history/ 
+ 
+# Node.js 
+node_modules/ 
+package-lock.json 
+*.log 
+ 
+# Environment Files 
+.env 
+.env.local 
+.env.example 
+.env.production 
+ 
+# Configuration Files 
+container-config.yaml 
+
+controllers/multicloud-controller/container-config.yaml

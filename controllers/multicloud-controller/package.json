@@ -1,4 +1,4 @@
- {
+{
   "name": "multicloud-controller",
   "version": "1.0.0",
   "description": "Multi-Cloud GitOps Controller for TechMart Research Platform",
@@ -13,7 +13,6 @@
     "multicloud",
     "microservices",
     "azure",
-    "railway",
     "render",
     "vercel"
   ],
