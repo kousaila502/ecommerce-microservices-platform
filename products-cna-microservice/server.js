@@ -36,7 +36,7 @@ const app = express();
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [
     'https://ecommerce-microservices-platform.vercel.app',
-    'https://ecommerce-cart-service.herokuapp.com'
+    'https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com'
   ]
   : [
     'https://ecommerce-microservices-platform.vercel.app',
