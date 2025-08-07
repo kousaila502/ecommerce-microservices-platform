@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: kousaila/order-service:latest  # Updated to follow naming convention
+          image: kousaila/order-service:gitops-a4fbaed
           imagePullPolicy: Always              # Changed from Never to Always
           env:
             - name: DATABASE_URL
