@@ -68,13 +68,13 @@ server:
 
 services:
   user-service:
-    url: ${USER_SERVICE_URL:http://localhost:9090/user}
+    url: ${USER_SERVICE_URL:http://localhost:9090}
     timeout: 5000ms
     retry:
       max-attempts: 3
       delay: 1000ms
   product-service:
-    url: ${PRODUCT_SERVICE_URL:http://localhost:9091}
+    url: ${PRODUCT_SERVICE_URL:http://localhost:3001}
     timeout: 5000ms
     retry:
       max-attempts: 3
