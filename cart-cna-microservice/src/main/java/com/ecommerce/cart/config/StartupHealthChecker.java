@@ -51,7 +51,7 @@ public class StartupHealthChecker implements CommandLineRunner {
         LOG.info("🚀 CART SERVICE STARTUP - CONNECTIVITY CHECKS");
         LOG.info("🚀 =================================================");
         LOG.info("🕐 Startup Time: {}", LocalDateTime.now());
-        LOG.info("📋 Service: Cart Service v3.0.0");
+        LOG.info("📋 Service: Cart Service v3.1.0-PIPELINE-TEST");
         LOG.info("🌍 Environment: {}", activeProfile);
         LOG.info("🔗 External Services Configuration:");
         LOG.info("   📧 User Service: {}", userServiceUrl);
@@ -100,7 +100,7 @@ public class StartupHealthChecker implements CommandLineRunner {
                 redisTemplate.delete("health-check").subscribe();
             })
             .doOnError(error -> LOG.error("❌ Redis: Connection failed - {}", error.getMessage()))
-            .onErrorReturn("")
+            .onErrorReturn(Boolean.FALSE)  // FIX: Use Boolean instead of String
             .subscribe();
     }
 
@@ -121,7 +121,8 @@ public class StartupHealthChecker implements CommandLineRunner {
     }
 
     private void testProductServiceConnection() {
-        productServiceClient.getProductById("1")
+        // FIX: Use getProduct instead of getProductById, and use Integer instead of String
+        productServiceClient.getProduct(1)
             .timeout(Duration.ofSeconds(10))
             .doOnSuccess(result -> LOG.info("✅ Product Service: Connection successful"))
             .doOnError(error -> {
@@ -152,6 +153,7 @@ public class StartupHealthChecker implements CommandLineRunner {
                         LOG.info("   📧 User Service Only: GET /health/user-service");
                         LOG.info("   📦 Product Service Only: GET /health/product-service");
                         LOG.info("   📋 Service Info: GET /health/info");
+                        LOG.info("   🧪 Pipeline Test: GET /pipeline-test");
                         LOG.info("🚀 =================================================");
                         LOG.info("🎯 Cart Service startup completed!");
                     })
