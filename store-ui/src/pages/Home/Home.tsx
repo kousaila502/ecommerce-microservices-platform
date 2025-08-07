@@ -1,4 +1,4 @@
-// src/pages/Home/Home.tsx (EXAMPLE OF ENHANCED ANIMATIONS)
+// src/pages/Home/Home.tsx - UPDATED WITH MICROSERVICES INTEGRATION
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -18,6 +18,7 @@ import {
   Slide,
   Zoom,
   Grow,
+  CircularProgress,
 } from '@mui/material';
 import {
   TrendingUp as TrendingIcon,
@@ -29,6 +30,8 @@ import {
   FlashOn as FlashIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { productsUrl, searchUrl } from '../../api/config';
 
 const categories = [
   { name: 'Electronics', icon: '💻', color: '#2563eb', deals: '50+ Deals' },
@@ -39,7 +42,8 @@ const categories = [
   { name: 'Toys', icon: '🧸', color: '#ec4899', deals: '35+ Deals' },
 ];
 
-const featuredProducts = [
+// Fallback products in case API fails
+const fallbackProducts = [
   {
     id: 1,
     name: 'Premium Wireless Headphones',
@@ -89,17 +93,90 @@ const featuredProducts = [
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
+  const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setVisible(true);
+    fetchTrendingProducts();
   }, []);
 
+  const fetchTrendingProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching trending products from:', `${productsUrl}products`);
+      
+      // Get products from your Product Service
+      const response = await axios.get(`${productsUrl}products`, {
+        params: { limit: 4 },
+        timeout: 10000
+      });
+      
+      console.log('Products response:', response.data);
+      
+      // Handle different response structures
+      let products = [];
+      if (Array.isArray(response.data)) {
+        products = response.data.slice(0, 4);
+      } else if (response.data.products && Array.isArray(response.data.products)) {
+        products = response.data.products.slice(0, 4);
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        products = response.data.data.slice(0, 4);
+      }
+      
+      setTrendingProducts(products.length > 0 ? products : fallbackProducts);
+    } catch (error) {
+      console.error('Error fetching trending products:', error);
+      setError('Failed to load products');
+      // Use fallback data
+      setTrendingProducts(fallbackProducts);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCategoryClick = (category: string) => {
+    // Use Search Service for category filtering
+    console.log('Searching category:', category, 'using searchUrl:', searchUrl);
     navigate(`/search?category=${category.toLowerCase()}`);
   };
 
-  const handleProductClick = (productId: number) => {
+  const handleProductClick = (productId: number | string) => {
     navigate(`/product/${productId}`);
+  };
+
+  const handleViewAllProducts = () => {
+    // Use Product Service for browsing all products
+    console.log('Viewing all products using productsUrl:', productsUrl);
+    navigate('/products');
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(price);
+  };
+
+  const getProductImage = (product: any, index: number) => {
+    if (product.image && product.image !== '/api/placeholder/300/200') {
+      return product.image;
+    }
+    // Use emoji as fallback based on product category or index
+    const emojis = ['🎧', '⌚', '⌨️', '📷', '💻', '📱', '🎮', '📺'];
+    return emojis[index % emojis.length];
+  };
+
+  const getBadgeForProduct = (product: any, index: number) => {
+    if (product.badge) return { label: product.badge, color: product.badgeColor };
+    
+    // Generate badges based on product data
+    if (product.rating >= 4.8) return { label: 'Best Seller', color: 'success' };
+    if (product.stock < 10) return { label: 'Limited', color: 'warning' };
+    if (index % 3 === 0) return { label: 'Hot Deal', color: 'error' };
+    return { label: 'Featured', color: 'info' };
   };
 
   return (
@@ -131,7 +208,7 @@ const Home: React.FC = () => {
                       backgroundClip: 'text',
                     }}
                   >
-                    Welcome to kousaila
+                    Welcome to TechMart
                   </Typography>
                   <Typography variant="h5" sx={{ mb: 4, opacity: 0.9 }}>
                     Discover amazing products at unbeatable prices
@@ -146,6 +223,7 @@ const Home: React.FC = () => {
                         borderRadius: 3,
                       }}
                       startIcon={<FlashIcon />}
+                      onClick={() => navigate('/deals')}
                     >
                       Shop Flash Deals
                     </Button>
@@ -159,6 +237,7 @@ const Home: React.FC = () => {
                         borderRadius: 3,
                       }}
                       endIcon={<ArrowIcon />}
+                      onClick={() => navigate('/search')}
                     >
                       Explore Categories
                     </Button>
@@ -187,14 +266,14 @@ const Home: React.FC = () => {
       </Box>
 
       <Container maxWidth="lg">
-        {/* Categories Section */}
+        {/* Categories Section - Uses Search Service */}
         <Fade in={visible} timeout={1000}>
           <Box sx={{ mb: 6 }}>
             <Typography variant="h4" fontWeight="bold" textAlign="center" gutterBottom>
               Shop by Category
             </Typography>
             <Typography variant="body1" color="text.secondary" textAlign="center" sx={{ mb: 4 }}>
-              Explore our wide range of products
+              Explore our wide range of products using our smart search
             </Typography>
             
             <Grid container spacing={3}>
@@ -244,7 +323,7 @@ const Home: React.FC = () => {
           </Box>
         </Fade>
 
-        {/* Featured Products */}
+        {/* Featured Products - Uses Product Service */}
         <Slide direction="up" in={visible} timeout={1200}>
           <Box sx={{ mb: 6 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 4 }}>
@@ -253,137 +332,178 @@ const Home: React.FC = () => {
                 Trending Products
               </Typography>
             </Box>
-            
-            <Grid container spacing={3}>
-              {featuredProducts.map((product, index) => (
-                <Grid item xs={12} sm={6} md={3} key={product.id}>
-                  <Zoom in={visible} timeout={1000 + index * 150}>
-                    <Card
-                      sx={{
-                        position: 'relative',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        '&:hover': {
-                          transform: 'translateY(-8px)',
-                          '& .product-actions': {
-                            opacity: 1,
-                            transform: 'translateY(0)',
-                          },
-                        },
-                      }}
-                      onClick={() => handleProductClick(product.id)}
-                    >
-                      <Box sx={{ position: 'relative' }}>
-                        <CardMedia
-                          component="div"
+
+            {error && (
+              <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <Typography color="error" variant="body2">
+                  {error} - Showing sample products
+                </Typography>
+              </Box>
+            )}
+
+            {loading ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <CircularProgress />
+                <Typography variant="body2" sx={{ mt: 2 }}>
+                  Loading trending products...
+                </Typography>
+              </Box>
+            ) : (
+              <Grid container spacing={3}>
+                {trendingProducts.map((product, index) => {
+                  const badge = getBadgeForProduct(product, index);
+                  const productId = product._id || product.id;
+                  const productName = product.title || product.name;
+                  const productPrice = product.price;
+                  const productRating = product.rating || 4.5;
+                  
+                  return (
+                    <Grid item xs={12} sm={6} md={3} key={productId}>
+                      <Zoom in={visible} timeout={1000 + index * 150}>
+                        <Card
                           sx={{
-                            height: 200,
-                            background: `linear-gradient(45deg, ${
-                              index % 2 === 0 ? '#2563eb' : '#7c3aed'
-                            } 30%, #f5f5f9 90%)`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '4rem',
-                            color: 'white',
+                            position: 'relative',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            '&:hover': {
+                              transform: 'translateY(-8px)',
+                              '& .product-actions': {
+                                opacity: 1,
+                                transform: 'translateY(0)',
+                              },
+                            },
                           }}
+                          onClick={() => handleProductClick(productId)}
                         >
-                          {index % 4 === 0 ? '🎧' : index % 4 === 1 ? '⌚' : index % 4 === 2 ? '⌨️' : '📷'}
-                        </CardMedia>
-                        
-                        <Chip
-                          label={product.badge}
-                          color={product.badgeColor as any}
-                          size="small"
-                          sx={{
-                            position: 'absolute',
-                            top: 8,
-                            left: 8,
-                            fontWeight: 'bold',
-                          }}
-                        />
-                        
-                        <Box
-                          className="product-actions"
-                          sx={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 8,
-                            opacity: 0,
-                            transform: 'translateY(-10px)',
-                            transition: 'all 0.2s ease',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 1,
-                          }}
-                        >
-                          <IconButton
-                            size="small"
-                            sx={{
-                              bgcolor: 'rgba(255,255,255,0.9)',
-                              '&:hover': { bgcolor: 'white', color: 'error.main' },
-                            }}
-                          >
-                            <FavoriteIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            sx={{
-                              bgcolor: 'rgba(255,255,255,0.9)',
-                              '&:hover': { bgcolor: 'white', color: 'primary.main' },
-                            }}
-                          >
-                            <CartIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </Box>
-                      
-                      <CardContent>
-                        <Typography variant="h6" fontWeight="medium" noWrap gutterBottom>
-                          {product.name}
-                        </Typography>
-                        
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <StarIcon sx={{ color: '#fbbf24', fontSize: 16, mr: 0.5 }} />
-                          <Typography variant="body2" sx={{ mr: 1 }}>
-                            {product.rating}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            ({product.reviews} reviews)
-                          </Typography>
-                        </Box>
-                        
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="h6" color="primary.main" fontWeight="bold">
-                            ${product.price}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ textDecoration: 'line-through' }}
-                          >
-                            ${product.originalPrice}
-                          </Typography>
-                          <Chip
-                            label={`${Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF`}
-                            size="small"
-                            color="error"
-                            sx={{ fontSize: '0.7rem', fontWeight: 'bold' }}
-                          />
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Zoom>
-                </Grid>
-              ))}
-            </Grid>
+                          <Box sx={{ position: 'relative' }}>
+                            <CardMedia
+                              component="div"
+                              sx={{
+                                height: 200,
+                                background: product.image && product.image.startsWith('http') 
+                                  ? `url(${product.image})` 
+                                  : `linear-gradient(45deg, ${
+                                      index % 2 === 0 ? '#2563eb' : '#7c3aed'
+                                    } 30%, #f5f5f9 90%)`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '4rem',
+                                color: 'white',
+                              }}
+                            >
+                              {(!product.image || !product.image.startsWith('http')) && getProductImage(product, index)}
+                            </CardMedia>
+                            
+                            <Chip
+                              label={badge.label}
+                              color={badge.color as any}
+                              size="small"
+                              sx={{
+                                position: 'absolute',
+                                top: 8,
+                                left: 8,
+                                fontWeight: 'bold',
+                              }}
+                            />
+                            
+                            <Box
+                              className="product-actions"
+                              sx={{
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                                opacity: 0,
+                                transform: 'translateY(-10px)',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 1,
+                              }}
+                            >
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  bgcolor: 'rgba(255,255,255,0.9)',
+                                  '&:hover': { bgcolor: 'white', color: 'error.main' },
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // TODO: Add to favorites functionality
+                                }}
+                              >
+                                <FavoriteIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                sx={{
+                                  bgcolor: 'rgba(255,255,255,0.9)',
+                                  '&:hover': { bgcolor: 'white', color: 'primary.main' },
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // TODO: Add to cart functionality
+                                }}
+                              >
+                                <CartIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                          
+                          <CardContent>
+                            <Typography variant="h6" fontWeight="medium" noWrap gutterBottom>
+                              {productName}
+                            </Typography>
+                            
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                              <StarIcon sx={{ color: '#fbbf24', fontSize: 16, mr: 0.5 }} />
+                              <Typography variant="body2" sx={{ mr: 1 }}>
+                                {productRating}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                ({product.reviews || Math.floor(Math.random() * 1000)} reviews)
+                              </Typography>
+                            </Box>
+                            
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="h6" color="primary.main" fontWeight="bold">
+                                {formatPrice(productPrice)}
+                              </Typography>
+                              {product.originalPrice && product.originalPrice > productPrice && (
+                                <>
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{ textDecoration: 'line-through' }}
+                                  >
+                                    {formatPrice(product.originalPrice)}
+                                  </Typography>
+                                  <Chip
+                                    label={`${Math.round(((product.originalPrice - productPrice) / product.originalPrice) * 100)}% OFF`}
+                                    size="small"
+                                    color="error"
+                                    sx={{ fontSize: '0.7rem', fontWeight: 'bold' }}
+                                  />
+                                </>
+                              )}
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Zoom>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            )}
             
             <Box sx={{ textAlign: 'center', mt: 4 }}>
               <Button
                 variant="contained"
                 size="large"
                 endIcon={<ArrowIcon />}
-                onClick={() => navigate('/search')}
+                onClick={handleViewAllProducts}
                 sx={{ borderRadius: 3 }}
               >
                 View All Products
@@ -419,6 +539,7 @@ const Home: React.FC = () => {
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
                 borderRadius: 3,
               }}
+              onClick={() => navigate('/deals')}
             >
               Shop Now
             </Button>

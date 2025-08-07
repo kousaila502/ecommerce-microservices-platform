@@ -18,5 +18,19 @@ export const usersUrl = process.env.REACT_APP_USERS_URL_BASE || 'http://localhos
 export const ordersUrl = process.env.REACT_APP_ORDERS_URL_BASE || 'http://localhost:8080/api/orders'
 export const adminUrl = process.env.REACT_APP_ADMIN_URL_BASE || 'http://localhost:8080/api/admin';
 
+// Add logging right after the export statements
+console.log('🔍 Environment Variables Check:');
+console.log('REACT_APP_USERS_URL_BASE:', process.env.REACT_APP_USERS_URL_BASE);
+console.log('REACT_APP_PRODUCTS_URL_BASE:', process.env.REACT_APP_PRODUCTS_URL_BASE);
+console.log('REACT_APP_CART_URL_BASE:', process.env.REACT_APP_CART_URL_BASE);
+
+console.log('🚀 Final URLs being used:');
+console.log('usersUrl:', usersUrl);
+console.log('productsUrl:', productsUrl);
+console.log('cartUrl:', cartUrl);
+console.log('searchUrl:', searchUrl);
+console.log('ordersUrl:', ordersUrl);
+console.log('adminUrl:', adminUrl);
+
 
 export default axiosClient

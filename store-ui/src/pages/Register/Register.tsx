@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { usersUrl } from '../../api/config';
 import {
   Box, Paper, Typography, TextField, Button, Alert,
   CircularProgress, Grid, Link as MuiLink, Avatar
@@ -16,7 +17,9 @@ interface RegisterRequest {
 
 // Updated API call for authentication registration
 const registerUser = async (userData: RegisterRequest) => {
-  const response = await fetch('http://localhost:8080/api/auth/register', {
+  console.log('🔍 usersUrl being used:', usersUrl);
+  console.log('🔍 Full register URL:', `${usersUrl}/auth/register`);
+  const response = await fetch(`${usersUrl}auth/register`, { // Use config variable
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

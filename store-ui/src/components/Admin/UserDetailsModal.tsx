@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
-  Typography, Box, Grid, Card, CardContent, Chip, Avatar,
+  Typography, Box, Card, CardContent, Chip, Avatar,
   List, ListItem, ListItemText, Divider, Alert, CircularProgress
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   Person as PersonIcon,
   Email as EmailIcon,
