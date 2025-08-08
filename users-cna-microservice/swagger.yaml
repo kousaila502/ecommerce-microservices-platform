@@ -1,0 +1,670 @@
+openapi: 3.0.3
+info:
+  title: User Service API - Live System Integration
+  description: |
+    E-commerce User Management Service with comprehensive live system integration
+
+    ## 🌐 Live System Architecture
+    This User Service integrates with a multi-cloud microservices ecosystem:
+
+    ### Frontend & Gateway
+    - **Frontend**: Vercel - https://ecommerce-microservices-platform.vercel.app
+    - **API Gateway**: GKE Kubernetes - http://34.118.167.199.nip.io
+    - **Controller**: Azure Container Instance
+
+    ### External Services
+    - **Cart Service**: Heroku Platform
+    - **Product Service**: Heroku Platform  
+    - **Order Service**: GKE Kubernetes
+    - **Search Service**: Render Platform
+
+    ### Data Layer
+    - **Database**: Neon PostgreSQL (AWS us-east-2)
+
+    ## 🔐 Authentication
+    This service uses JWT (JSON Web Tokens) for authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <jwt_token>
+    ```
+
+    ## 🚀 Deployment
+    - **Platform**: Google Kubernetes Engine (GKE)
+    - **Namespace**: research-apps
+    - **GitOps**: Managed by ArgoCD
+
+  version: 2.3.0-LIVE
+  contact:
+    name: Benhamouche Kousaila
+    email: k.benhamouche@esi-sba.dz
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://34.118.167.199.nip.io/user
+    description: Production API Gateway (GKE)
+  - url: http://localhost:9090
+    description: Local Development Server
+
+tags:
+  - name: Authentication
+    description: User authentication and token management
+  - name: User Management
+    description: User profile and account operations
+  - name: Admin Operations
+    description: Administrative user management (admin only)
+  - name: Health Monitoring
+    description: Service health and status endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health Monitoring
+      summary: Basic health check
+      description: Returns the current health status of the User Service
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  service:
+                    type: string
+                    example: "user-service"
+                  version:
+                    type: string
+                    example: "2.3.0-LIVE"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-08-07T10:30:00.000Z"
+                  environment:
+                    type: string
+                    example: "production"
+                  database:
+                    type: string
+                    example: "connected"
+                  live_system:
+                    type: object
+                    properties:
+                      frontend:
+                        type: string
+                        example: "https://ecommerce-microservices-platform.vercel.app"
+                      api_gateway:
+                        type: string
+                        example: "http://34.118.167.199.nip.io"
+
+  /health/info:
+    get:
+      tags:
+        - Health Monitoring
+      summary: Detailed service information
+      description: Returns comprehensive service configuration and system information
+      responses:
+        "200":
+          description: Detailed service information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                    example: "user-service"
+                  version:
+                    type: string
+                    example: "2.3.0-LIVE"
+                  description:
+                    type: string
+                    example: "E-commerce User Management Service"
+                  environment:
+                    type: string
+                    example: "production"
+                  configuration:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        example: "Neon PostgreSQL"
+                      authentication:
+                        type: string
+                        example: "JWT"
+                      cors_enabled:
+                        type: boolean
+                        example: true
+                  live_system_integration:
+                    type: object
+                    properties:
+                      frontend:
+                        type: string
+                        example: "https://ecommerce-microservices-platform.vercel.app"
+                      api_gateway:
+                        type: string
+                        example: "http://34.118.167.199.nip.io"
+                      cart_service:
+                        type: string
+                        example: "https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com"
+                      product_service:
+                        type: string
+                        example: "https://ecommerce-product-service-56575270905a.herokuapp.com"
+
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account in the system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                  example: "john_doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "SecurePassword123"
+                full_name:
+                  type: string
+                  example: "John Doe"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User registered successfully"
+                  user_id:
+                    type: integer
+                    example: 123
+                  username:
+                    type: string
+                    example: "john_doe"
+        "400":
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and return JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: "john_doe"
+                password:
+                  type: string
+                  example: "SecurePassword123"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  token_type:
+                    type: string
+                    example: "bearer"
+                  expires_in:
+                    type: integer
+                    example: 1800
+                  user:
+                    $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/validate:
+    post:
+      tags:
+        - Authentication
+      summary: Validate JWT token
+      description: Validate a JWT token and return user information
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        "200":
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    example: true
+                  user:
+                    $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /users/profile:
+    get:
+      tags:
+        - User Management
+      summary: Get user profile
+      description: Get the current user's profile information
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    put:
+      tags:
+        - User Management
+      summary: Update user profile
+      description: Update the current user's profile information
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "newemail@example.com"
+                full_name:
+                  type: string
+                  example: "John Updated Doe"
+                bio:
+                  type: string
+                  example: "Software Developer"
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Profile updated successfully"
+                  user:
+                    $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /users/password:
+    put:
+      tags:
+        - User Management
+      summary: Change password
+      description: Change the current user's password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - current_password
+                - new_password
+              properties:
+                current_password:
+                  type: string
+                  example: "OldPassword123"
+                new_password:
+                  type: string
+                  minLength: 6
+                  example: "NewSecurePassword456"
+      responses:
+        "200":
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password changed successfully"
+        "400":
+          description: Invalid current password or new password requirements not met
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /admin/users:
+    get:
+      tags:
+        - Admin Operations
+      summary: Get all users (Admin only)
+      description: Retrieve a list of all users in the system (admin access required)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of users per page
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search term for username or email
+      responses:
+        "200":
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserProfile"
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 20
+                      total:
+                        type: integer
+                        example: 150
+                      pages:
+                        type: integer
+                        example: 8
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /admin/users/{user_id}:
+    get:
+      tags:
+        - Admin Operations
+      summary: Get user by ID (Admin only)
+      description: Retrieve detailed information about a specific user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+          description: User ID
+      responses:
+        "200":
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      tags:
+        - Admin Operations
+      summary: Delete user (Admin only)
+      description: Delete a user account from the system
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+          description: User ID to delete
+      responses:
+        "200":
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User deleted successfully"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from the login endpoint.
+        Include the token in the Authorization header as: `Bearer <token>`
+
+  schemas:
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123
+        username:
+          type: string
+          example: "john_doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        full_name:
+          type: string
+          example: "John Doe"
+        bio:
+          type: string
+          example: "Software Developer"
+        is_active:
+          type: boolean
+          example: true
+        is_admin:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-08-07T14:45:00.000Z"
+        last_login:
+          type: string
+          format: date-time
+          example: "2025-08-07T09:15:00.000Z"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Invalid credentials"
+        message:
+          type: string
+          example: "The provided username or password is incorrect"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-08-07T10:30:00.000Z"
+        path:
+          type: string
+          example: "/auth/login"
+
+  examples:
+    UserRegistration:
+      summary: User registration example
+      value:
+        username: "jane_smith"
+        email: "jane.smith@example.com"
+        password: "SecurePassword789"
+        full_name: "Jane Smith"
+
+    UserLogin:
+      summary: User login example
+      value:
+        username: "jane_smith"
+        password: "SecurePassword789"
+
+    TokenValidation:
+      summary: Token validation example
+      value:
+        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+
+security:
+  - bearerAuth: []

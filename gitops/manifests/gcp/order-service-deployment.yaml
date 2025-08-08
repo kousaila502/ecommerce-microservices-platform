@@ -4,13 +4,17 @@ metadata:
   name: order-service-deployment
   labels:
     app: order-service
+    methodology: gitops
+    pipeline-type: argocd
+    research-phase: multicloud-gitops-research
+    managed-by: argocd
 spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0  # Keep old pod running during update
       maxSurge: 1        # Allow 1 new pod to be created
-  replicas: 1            # Changed from 2 to 1 (same as user service)
+  replicas: 1
   selector:
     matchLabels:
       app: order-service
@@ -18,46 +22,84 @@ spec:
     metadata:
       labels:
         app: order-service
+        methodology: gitops
+        pipeline-type: argocd
     spec:
       containers:
         - name: order-service
           image: kousaila/order-service:gitops-678fb96
-          imagePullPolicy: Always              # Changed from Never to Always
+          imagePullPolicy: Always
           env:
             - name: DATABASE_URL
-              value: "postgresql+asyncpg://neondb_owner:npg_8kBPvMTquH2m@ep-cold-breeze-aedi5hre-pooler.c-2.us-east-2.aws.neon.tech/neondb"  # Updated to use Neon PostgreSQL
+              value: "postgresql+asyncpg://neondb_owner:npg_8kBPvMTquH2m@ep-cold-breeze-aedi5hre-pooler.c-2.us-east-2.aws.neon.tech/neondb"
             - name: USER_SERVICE_URL
               value: http://user-service:9090
             - name: CART_SERVICE_URL
-              value: http://cart-service:8080
+              value: "https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com"  # ← UPDATED: Live Heroku URL
             - name: PRODUCT_SERVICE_URL
-              value: http://product-service:3001
+              value: "https://ecommerce-product-service-56575270905a.herokuapp.com"  # ← UPDATED: Live Heroku URL
+            - name: SEARCH_SERVICE_URL
+              value: "https://ecommerce-microservices-platform.onrender.com"  # ← ADDED: Live Render URL
             - name: SECRET_KEY
               value: your-super-secret-jwt-key-change-in-production
             - name: ALGORITHM
               value: HS256
-            - name: ACCESS_TOKEN_EXPIRE_MINUTES  # Added to match user service
+            - name: ACCESS_TOKEN_EXPIRE_MINUTES
               value: "30"
             - name: CORS_ORIGINS
-              value: "http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:50951"  # Updated to match user service
+              value: "https://ecommerce-microservices-platform.vercel.app,http://34.118.167.199.nip.io,http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:50951,https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com,https://ecommerce-product-service-56575270905a.herokuapp.com,https://ecommerce-microservices-platform.onrender.com,http://techmart-controller.uksouth.azurecontainer.io:3000"
+            # Added Redis configuration for caching
+            - name: REDIS_URL
+              value: "redis://discrete-raccoon-6606.upstash.io:6379"  # ← ADDED: Upstash Redis for caching
           ports:
             - containerPort: 8081
           resources:
             requests:
-              memory: "64Mi"   # Reduced from 256Mi to match user service
-              cpu: "50m"       # Reduced from 200m to match user service
+              memory: "256Mi"    # ← UPDATED: Increased from 64Mi (FastAPI + auto-reload needs more)
+              cpu: "150m"        # ← UPDATED: Increased from 50m
             limits:
-              memory: "128Mi"  # Reduced from 512Mi to match user service
-              cpu: "100m"      # Reduced from 400m to match user service
+              memory: "512Mi"    # ← UPDATED: Increased from 128Mi (Fixes OOMKilled)
+              cpu: "300m"        # ← UPDATED: Increased from 100m (FastAPI overhead)
+          # Enhanced health checks for better reliability
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 45  # ← Longer delay for FastAPI startup
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # Added startup probe for FastAPI initialization
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 40  # ← Higher threshold for FastAPI + auto-reload
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: order-service
+  labels:
+    app: order-service
+    methodology: gitops
+    managed-by: argocd
 spec:
   selector:
     app: order-service
   ports:
     - port: 8081
       targetPort: 8081
+      name: http
   type: NodePort

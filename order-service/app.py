@@ -70,7 +70,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": settings.service_name,
-        "version": "2.0.0-LIVE",
+        "version": "2.1.0-LIVE",
         "timestamp": datetime.utcnow().isoformat(),
         "environment": settings.environment,
         "uptime": "Service is running",

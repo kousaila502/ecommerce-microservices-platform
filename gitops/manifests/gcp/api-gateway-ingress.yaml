@@ -12,11 +12,29 @@ metadata:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
+    # CORS Configuration for live system integration
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://34.118.167.199.nip.io,https://ecommerce-microservices-platform.vercel.app,http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:50951,https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com,https://ecommerce-product-service-56575270905a.herokuapp.com,https://ecommerce-microservices-platform.onrender.com,http://techmart-controller.uksouth.azurecontainer.io:3000"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-max-age: "86400"
+    # Performance and security optimizations
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    # Rate limiting for production
+    nginx.ingress.kubernetes.io/limit-connections: "20"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    # Health check configuration
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
 spec:
   rules:
     - host: 34.118.167.199.nip.io
       http:
         paths:
+          # User Service Routes
           - path: /user(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
@@ -24,6 +42,8 @@ spec:
                 name: user-service
                 port:
                   number: 9090
+          
+          # Order Service Routes  
           - path: /order(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
@@ -31,8 +51,55 @@ spec:
                 name: order-service
                 port:
                   number: 8081
+          
+          # Global Health Check (User Service)
           - path: /health
             pathType: Exact
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 9090
+          
+          # Order Service Health Check
+          - path: /order/health
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+          
+          # User Service Health Check  
+          - path: /user/health
+            pathType: Exact
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 9090
+          
+          # API Gateway Status Endpoint
+          - path: /api/status
+            pathType: Exact
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 9090
+          
+          # Fallback route for API documentation
+          - path: /docs
+            pathType: Exact
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 9090
+          
+          # Root API endpoint
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: user-service
