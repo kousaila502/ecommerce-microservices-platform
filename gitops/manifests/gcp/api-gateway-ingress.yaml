@@ -14,7 +14,7 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
     # CORS Configuration for live system integration
     nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "http://34.118.167.199.nip.io,https://ecommerce-microservices-platform.vercel.app,http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:50951,https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com,https://ecommerce-product-service-56575270905a.herokuapp.com,https://ecommerce-microservices-platform.onrender.com,http://techmart-controller.uksouth.azurecontainer.io:3000"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://34.95.5.30.nip.io,http://34.118.167.199.nip.io,https://ecommerce-microservices-platform.vercel.app,http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:50951,https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com,https://ecommerce-product-service-56575270905a.herokuapp.com,https://ecommerce-microservices-platform.onrender.com,http://techmart-controller.uksouth.azurecontainer.io:3000"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type, Authorization, X-Requested-With, Accept, Origin"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
@@ -30,8 +30,9 @@ metadata:
     # Health check configuration
     nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
 spec:
+  ingressClassName: nginx 
   rules:
-    - host: 34.118.167.199.nip.io
+    - host: 34.95.5.30.nip.io 
       http:
         paths:
           # User Service Routes

@@ -31,7 +31,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: DATABASE_URL
-              value: "postgresql+asyncpg://neondb_owner:npg_8kBPvMTquH2m@ep-cold-breeze-aedi5hre-pooler.c-2.us-east-2.aws.neon.tech/neondb"
+              value: "postgresql+asyncpg://neondb_owner:npg_8kBPvMTquH2m@ep-cold-breeze-aedi5hre-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
             - name: SECRET_KEY
               value: your-super-secret-jwt-key-change-in-production
             - name: ALGORITHM
@@ -39,16 +39,16 @@ spec:
             - name: ACCESS_TOKEN_EXPIRE_MINUTES
               value: "30"
             - name: CORS_ORIGINS
-              value: "https://ecommerce-microservices-platform.vercel.app,http://34.118.167.199.nip.io,http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:50951,https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com,https://ecommerce-product-service-56575270905a.herokuapp.com,https://ecommerce-microservices-platform.onrender.com,http://techmart-controller.uksouth.azurecontainer.io:3000"
+              value: "http://34.95.5.30.nip.io,https://ecommerce-microservices-platform.vercel.app,http://34.118.167.199.nip.io,http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:50951,https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com,https://ecommerce-product-service-56575270905a.herokuapp.com,https://ecommerce-microservices-platform.onrender.com,http://techmart-controller.uksouth.azurecontainer.io:3000"
           ports:
             - containerPort: 9090
           resources:
             requests:
-              memory: "128Mi"    # ← UPDATED: Increased from 64Mi
-              cpu: "100m"        # ← UPDATED: Increased from 50m
+              memory: "128Mi"
+              cpu: "100m"
             limits:
-              memory: "256Mi"    # ← UPDATED: Increased from 128Mi
-              cpu: "200m"        # ← UPDATED: Increased from 100m
+              memory: "256Mi"
+              cpu: "200m"
           # Enhanced health checks for better reliability
           livenessProbe:
             httpGet:

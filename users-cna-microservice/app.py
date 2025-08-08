@@ -71,7 +71,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "user-service",
-        "version": "2.3.0-LIVE",
+        "version": "2.4.0-LIVE",
         "timestamp": "2025-08-07T10:30:00.000Z",
         "platform": "GKE Kubernetes",
         "database": "Neon PostgreSQL",
