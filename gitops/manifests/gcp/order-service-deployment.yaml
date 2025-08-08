@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: kousaila/order-service:gitops-678fb96
+          image: kousaila/order-service:gitops-166f84d
           imagePullPolicy: Always
           env:
             - name: DATABASE_URL
