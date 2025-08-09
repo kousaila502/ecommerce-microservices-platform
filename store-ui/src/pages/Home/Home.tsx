@@ -31,7 +31,8 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { productsUrl, searchUrl } from '../../api/config';
+import { productsUrl, searchUrl, apiUrl } from '../../api/config';
+import Deals from '../../components/Deals/Deals';
 
 const categories = [
   { name: 'Electronics', icon: '💻', color: '#2563eb', deals: '50+ Deals' },
@@ -106,16 +107,16 @@ const Home: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching trending products from:', `${productsUrl}products`);
-      
-      // Get products from your Product Service
-      const response = await axios.get(`${productsUrl}products`, {
+      console.log('Fetching trending products from:', apiUrl.products('products'));
+
+      // Get products from your Product Service - FIXED: Use apiUrl helper
+      const response = await axios.get(apiUrl.products('products'), {
         params: { limit: 4 },
         timeout: 10000
       });
-      
+
       console.log('Products response:', response.data);
-      
+
       // Handle different response structures
       let products = [];
       if (Array.isArray(response.data)) {
@@ -125,7 +126,7 @@ const Home: React.FC = () => {
       } else if (response.data.data && Array.isArray(response.data.data)) {
         products = response.data.data.slice(0, 4);
       }
-      
+
       setTrendingProducts(products.length > 0 ? products : fallbackProducts);
     } catch (error) {
       console.error('Error fetching trending products:', error);
@@ -171,7 +172,7 @@ const Home: React.FC = () => {
 
   const getBadgeForProduct = (product: any, index: number) => {
     if (product.badge) return { label: product.badge, color: product.badgeColor };
-    
+
     // Generate badges based on product data
     if (product.rating >= 4.8) return { label: 'Best Seller', color: 'success' };
     if (product.stock < 10) return { label: 'Limited', color: 'warning' };
@@ -275,7 +276,7 @@ const Home: React.FC = () => {
             <Typography variant="body1" color="text.secondary" textAlign="center" sx={{ mb: 4 }}>
               Explore our wide range of products using our smart search
             </Typography>
-            
+
             <Grid container spacing={3}>
               {categories.map((category, index) => (
                 <Grid item xs={6} sm={4} md={2} key={category.name}>
@@ -356,7 +357,7 @@ const Home: React.FC = () => {
                   const productName = product.title || product.name;
                   const productPrice = product.price;
                   const productRating = product.rating || 4.5;
-                  
+
                   return (
                     <Grid item xs={12} sm={6} md={3} key={productId}>
                       <Zoom in={visible} timeout={1000 + index * 150}>
@@ -380,11 +381,10 @@ const Home: React.FC = () => {
                               component="div"
                               sx={{
                                 height: 200,
-                                background: product.image && product.image.startsWith('http') 
-                                  ? `url(${product.image})` 
-                                  : `linear-gradient(45deg, ${
-                                      index % 2 === 0 ? '#2563eb' : '#7c3aed'
-                                    } 30%, #f5f5f9 90%)`,
+                                background: product.image && product.image.startsWith('http')
+                                  ? `url(${product.image})`
+                                  : `linear-gradient(45deg, ${index % 2 === 0 ? '#2563eb' : '#7c3aed'
+                                  } 30%, #f5f5f9 90%)`,
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
                                 display: 'flex',
@@ -396,7 +396,7 @@ const Home: React.FC = () => {
                             >
                               {(!product.image || !product.image.startsWith('http')) && getProductImage(product, index)}
                             </CardMedia>
-                            
+
                             <Chip
                               label={badge.label}
                               color={badge.color as any}
@@ -408,7 +408,7 @@ const Home: React.FC = () => {
                                 fontWeight: 'bold',
                               }}
                             />
-                            
+
                             <Box
                               className="product-actions"
                               sx={{
@@ -451,12 +451,12 @@ const Home: React.FC = () => {
                               </IconButton>
                             </Box>
                           </Box>
-                          
+
                           <CardContent>
                             <Typography variant="h6" fontWeight="medium" noWrap gutterBottom>
                               {productName}
                             </Typography>
-                            
+
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                               <StarIcon sx={{ color: '#fbbf24', fontSize: 16, mr: 0.5 }} />
                               <Typography variant="body2" sx={{ mr: 1 }}>
@@ -466,7 +466,7 @@ const Home: React.FC = () => {
                                 ({product.reviews || Math.floor(Math.random() * 1000)} reviews)
                               </Typography>
                             </Box>
-                            
+
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               <Typography variant="h6" color="primary.main" fontWeight="bold">
                                 {formatPrice(productPrice)}
@@ -497,7 +497,7 @@ const Home: React.FC = () => {
                 })}
               </Grid>
             )}
-            
+
             <Box sx={{ textAlign: 'center', mt: 4 }}>
               <Button
                 variant="contained"
@@ -511,6 +511,13 @@ const Home: React.FC = () => {
             </Box>
           </Box>
         </Slide>
+
+        {/* Deals Section */}
+        <Fade in={visible} timeout={1400}>
+          <Box sx={{ mb: 6 }}>
+            <Deals />
+          </Box>
+        </Fade>
 
         {/* Special Offers */}
         <Fade in={visible} timeout={1500}>
