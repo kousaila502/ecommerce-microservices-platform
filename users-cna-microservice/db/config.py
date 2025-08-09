@@ -1,6 +1,11 @@
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import text
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Environment variable validation for security
 def validate_required_env_vars():
@@ -69,9 +74,8 @@ async def check_database_health():
     """Check database connectivity for health endpoints"""
     try:
         async with async_session() as session:
-            # Simple query to check connection
-            result = await session.execute("SELECT 1")
-            await result.fetchone()
+            # Simple connection test - just open and close session
+            await session.connection()
             return {
                 "status": "connected",
                 "provider": "Neon PostgreSQL",

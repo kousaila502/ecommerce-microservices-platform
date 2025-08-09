@@ -1,0 +1,10 @@
+fastapi>=0.78.0
+uvicorn[standard]>=0.18.0
+sqlalchemy>=1.4.0
+asyncpg>=0.26.0
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+python-multipart>=0.0.5
+pydantic[email]>=1.10.0
+email-validator>=1.2.0
+python-dotenv>=0.19.0
