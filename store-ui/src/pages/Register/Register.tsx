@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { usersUrl } from '../../api/config';
+import { apiUrl } from '../../api/config';
 import {
   Box, Paper, Typography, TextField, Button, Alert,
   CircularProgress, Grid, Link as MuiLink, Avatar
@@ -17,9 +17,8 @@ interface RegisterRequest {
 
 // Updated API call for authentication registration
 const registerUser = async (userData: RegisterRequest) => {
-  console.log('🔍 usersUrl being used:', usersUrl);
-  console.log('🔍 Full register URL:', `${usersUrl}/auth/register`);
-  const response = await fetch(`${usersUrl}auth/register`, { // Use config variable
+  console.log('🔍 Register URL being used:', apiUrl.users('auth/register'));
+  const response = await fetch(apiUrl.users('auth/register'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

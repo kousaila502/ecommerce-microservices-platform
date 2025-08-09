@@ -1,7 +1,7 @@
 # routers/admin_router.py (NEW FILE)
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import List, Optional
 from datetime import datetime
 
@@ -9,6 +9,8 @@ from db.dals.user_dal import UserDAL
 from db.models.user import User, UserStatus
 from routers.auth_router import get_current_user, require_admin
 from db.config import get_db
+from dependencies import get_user_dal
+from utils.auth import validate_password_strength, validate_email, validate_mobile
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -44,6 +46,50 @@ class SessionResponse(BaseModel):
     logout_time: Optional[str]
     ip_address: Optional[str]
     is_active: bool
+
+# NEW: Admin Create User Request Model
+class AdminCreateUserRequest(BaseModel):
+    name: str
+    email: str
+    mobile: str
+    password: str
+    role: str = "user"
+    
+    @validator('role')
+    def validate_role(cls, v):
+        if v not in ['user', 'admin']:
+            raise ValueError('Role must be either "user" or "admin"')
+        return v
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError('Password must be at least 6 characters long')
+        return v
+    
+    @validator('email')
+    def validate_email_format(cls, v):
+        if '@' not in v or '.' not in v:
+            raise ValueError('Invalid email format')
+        return v.lower()
+    
+    @validator('mobile')
+    def validate_mobile_format(cls, v):
+        if not v.isdigit() or len(v) < 8:
+            raise ValueError('Mobile must be a valid number with at least 8 digits')
+        return v
+
+# NEW: Admin Create User Response Model
+class AdminCreateUserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    mobile: str
+    role: str
+    status: str
+    is_email_verified: bool
+    created_at: str
+    message: str
 
 # User Management Endpoints
 @router.get("/users", response_model=List[UserStatusResponse])
@@ -207,6 +253,90 @@ async def change_user_role(
             "message": f"User {target_user.name} role changed to {new_role}",
             "user": UserStatusResponse(**updated_user.to_dict())
         }
+
+# NEW: Admin Create User Endpoint
+@router.post("/create-user", response_model=AdminCreateUserResponse)
+async def admin_create_user(
+    user_data: AdminCreateUserRequest,
+    current_admin: User = Depends(require_admin),
+    user_dal: UserDAL = Depends(get_user_dal),
+    request: Request = None
+):
+    """
+    Admin-only endpoint to create new users with any role.
+    This is separate from the public registration endpoint.
+    """
+    
+    client_ip = request.client.host if request else "unknown"
+    
+    try:
+        # Log admin action
+        print(f"Admin {current_admin.email} (ID: {current_admin.id}) creating user from IP: {client_ip}")
+        print(f"User data: name={user_data.name}, email={user_data.email}, role={user_data.role}")
+        
+        # Additional validation
+        if not validate_email(user_data.email):
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid email format"
+            )
+        
+        if not validate_mobile(user_data.mobile):
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid mobile number format"
+            )
+        
+        # Check if user already exists
+        existing_user = await user_dal.get_user_by_email(user_data.email)
+        if existing_user:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"User with email {user_data.email} already exists"
+            )
+        
+        # Create the user using the auth registration flow
+        # This ensures proper password hashing and user setup
+        from routers.auth_router import UserRegister
+        
+        register_data = UserRegister(
+            name=user_data.name,
+            email=user_data.email,
+            mobile=user_data.mobile,
+            password=user_data.password
+        )
+        
+        # Create user with specified role (this is the admin privilege)
+        new_user = await user_dal.create_user_with_auth(
+            name=register_data.name,
+            email=register_data.email,
+            mobile=register_data.mobile,
+            password=register_data.password,  # Will be hashed by the DAL
+            role=user_data.role  # Admin can set any role
+        )
+        
+        print(f"✅ Admin {current_admin.email} successfully created user {new_user.email} with role {new_user.role}")
+        
+        return AdminCreateUserResponse(
+            id=new_user.id,
+            name=new_user.name,
+            email=new_user.email,
+            mobile=new_user.mobile,
+            role=new_user.role,
+            status=new_user.status.value,
+            is_email_verified=new_user.is_email_verified,
+            created_at=new_user.created_at.isoformat(),
+            message=f"User {new_user.name} created successfully by admin {current_admin.name}"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in admin user creation: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to create user: {str(e)}"
+        )
 
 # Statistics and Analytics
 @router.get("/stats", response_model=UserStatsResponse)

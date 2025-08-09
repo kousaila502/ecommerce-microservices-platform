@@ -26,6 +26,37 @@ class UserDAL:
         await self.db_session.refresh(new_user)
         return new_user
 
+    async def create_user_with_auth(self, name: str, email: str, mobile: str, password: str, role: str = "user"):
+        """
+        Create a user with proper password hashing and authentication setup.
+        Used by admin creation and registration endpoints.
+        """
+        try:
+            # Hash the password
+            hashed_password = hash_password(password)
+            
+            # Create user with hashed password
+            new_user = User(
+                name=name,
+                email=email,
+                mobile=mobile,
+                password=hashed_password,  # FIXED: Use 'password' not 'password_hash'
+                role=role,
+                status=UserStatus.ACTIVE,
+                is_email_verified=True,  # Admin-created users are verified by default
+                created_at=datetime.utcnow()
+            )
+            
+            self.db_session.add(new_user)
+            await self.db_session.flush()
+            await self.db_session.refresh(new_user)
+            
+            return new_user
+            
+        except Exception as e:
+            await self.db_session.rollback()
+            raise e
+
     async def get_all_users(self, include_blocked: bool = True) -> List[User]:
         query = select(User).order_by(User.id)
         if not include_blocked:
