@@ -20,7 +20,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getOrderStats } from '../../../api/order';
-import { adminUrl } from '../../../api/config';
+import { apiUrl } from '../../../api/config';
 
 interface UserStats {
   total_users: number;
@@ -68,7 +68,7 @@ const AdminDashboard: React.FC = () => {
       setLoading(true);
 
       // Fetch user statistics
-      const statsResponse = await fetch(`${adminUrl}/stats`, {
+      const statsResponse = await fetch(apiUrl.admin('stats'), {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -78,7 +78,7 @@ const AdminDashboard: React.FC = () => {
       setStats(await statsResponse.json());
 
       // Fetch recent users
-      const usersResponse = await fetch(`${adminUrl}/users`, {
+      const usersResponse = await fetch(apiUrl.admin('users'), {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -295,8 +295,8 @@ const AdminDashboard: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            transition: 'transform 0.2s', 
+          <Card sx={{
+            transition: 'transform 0.2s',
             '&:hover': { transform: 'translateY(-4px)' },
             border: orderStats?.pending_orders ? 2 : 0,
             borderColor: 'warning.main'
@@ -308,10 +308,10 @@ const AdminDashboard: React.FC = () => {
                     <Typography color="text.secondary">
                       Pending Orders
                       {orderStats?.pending_orders && orderStats.pending_orders > 0 && (
-                        <Chip 
-                          label="Action Required" 
-                          size="small" 
-                          color="warning" 
+                        <Chip
+                          label="Action Required"
+                          size="small"
+                          color="warning"
                           sx={{ ml: 1, fontSize: '0.6rem' }}
                         />
                       )}
