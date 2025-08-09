@@ -1,6 +1,6 @@
-// src/contexts/AuthContext.tsx (NEW FILE)
+// src/contexts/AuthContext.tsx (UPDATED WITH CORRECT ENDPOINTS)
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { usersUrl } from '../api/config';
+import { apiUrl } from '../api/config';
 
 interface User {
   id: number;
@@ -37,7 +37,7 @@ interface AuthProviderProps {
 // Auth API functions
 const authApi = {
   async login(email: string, password: string) {
-    const response = await fetch(`${usersUrl}auth/login`, {
+    const response = await fetch(apiUrl.users('auth/login'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ const authApi = {
     return response.json();
   },
   async getCurrentUser(token: string) {
-    const response = await fetch(`${usersUrl}auth/me`, {
+    const response = await fetch(apiUrl.users('auth/me'), {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
