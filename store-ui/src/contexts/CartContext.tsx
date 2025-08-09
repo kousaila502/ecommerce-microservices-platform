@@ -1,5 +1,5 @@
 // src/contexts/CartContext.tsx (FIXED VERSION WITH TOKEN)
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import * as cartApi from '../api/cart';
 
@@ -25,7 +25,7 @@ interface CartContextType {
   isCartSidebarOpen: boolean;
   loading: boolean;
   error: string | null;
-  
+
   // Actions
   openCartSidebar: () => void;
   closeCartSidebar: () => void;
@@ -61,16 +61,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   // Calculate cart count
   const cartCount = cart?.items.reduce((total, item) => total + item.quantity, 0) || 0;
 
-  // Fetch cart when user changes or logs in
-  useEffect(() => {
-    if (isAuthenticated && user?.id && token) {
-      refreshCart();
-    } else {
-      setCart(null);
-    }
-  }, [isAuthenticated, user?.id, token]);
-
-  const refreshCart = async (): Promise<void> => {
+  // Memoize refreshCart to prevent infinite loops
+  const refreshCart = useCallback(async (): Promise<void> => {
     if (!user?.id || !token) {
       setCart(null);
       return;
@@ -94,9 +86,19 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, token]); // Dependencies: only re-create when user ID or token changes
 
-  const addToCart = async (item: Omit<CartItem, 'quantity'> & { quantity?: number }): Promise<void> => {
+  // Fetch cart when user changes or logs in
+  useEffect(() => {
+    if (isAuthenticated && user?.id && token) {
+      refreshCart();
+    } else {
+      setCart(null);
+    }
+  }, [isAuthenticated, user?.id, token, refreshCart]);
+
+  // Memoize other functions to prevent unnecessary re-renders
+  const addToCart = useCallback(async (item: Omit<CartItem, 'quantity'> & { quantity?: number }): Promise<void> => {
     if (!user?.id || !token) {
       throw new Error('User must be logged in to add items to cart');
     }
@@ -113,7 +115,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         price: item.price,
         currency: item.currency,
       };
-      
+
       const result = await cartApi.addToCart(user.id, addToCartPayload, token);
       if (result) {
         await refreshCart();
@@ -129,9 +131,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, token, refreshCart]);
 
-  const updateCartItem = async (productId: number, quantity: number): Promise<void> => {
+  const updateCartItem = useCallback(async (productId: number, quantity: number): Promise<void> => {
     if (!user?.id || !token) return;
 
     setLoading(true);
@@ -156,9 +158,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, token, refreshCart]);
 
-  const removeFromCart = async (productId: number): Promise<void> => {
+  const removeFromCart = useCallback(async (productId: number): Promise<void> => {
     if (!user?.id || !token) return;
 
     setLoading(true);
@@ -177,9 +179,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, token, refreshCart]);
 
-  const clearCart = async (): Promise<void> => {
+  const clearCart = useCallback(async (): Promise<void> => {
     if (!user?.id || !token) return;
 
     setLoading(true);
@@ -198,19 +200,20 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, token]);
 
-  const openCartSidebar = (): void => {
+  // Memoize sidebar functions
+  const openCartSidebar = useCallback((): void => {
     setIsCartSidebarOpen(true);
-  };
+  }, []);
 
-  const closeCartSidebar = (): void => {
+  const closeCartSidebar = useCallback((): void => {
     setIsCartSidebarOpen(false);
-  };
+  }, []);
 
-  const toggleCartSidebar = (): void => {
+  const toggleCartSidebar = useCallback((): void => {
     setIsCartSidebarOpen(prev => !prev);
-  };
+  }, []);
 
   const contextValue: CartContextType = {
     cart,
