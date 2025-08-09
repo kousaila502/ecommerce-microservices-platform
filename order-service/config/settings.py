@@ -13,12 +13,12 @@ class Settings(BaseSettings):
     """
     
     # Database settings - MUST be provided via environment variables
-    database_url: str = os.getenv("DATABASE_URL")
+    database_url: str = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/orderdb")
     
     # JWT settings (must match user service) - MUST be provided via environment variables
-    secret_key: str = os.getenv("SECRET_KEY")
+    secret_key: str = os.getenv("SECRET_KEY", "dyO5kHriKkZm_8tSzTxZOmKGd0iGhMLPusNi61pi5bU4MxJ12SZ2B0-iznJrLP-DTPsHDbao3_QduMo2TVpOCA")
     algorithm: str = os.getenv("ALGORITHM", "HS256")
-    access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+    access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
     
     # Service settings
     service_name: str = os.getenv("SERVICE_NAME", "order-service")
@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     service_host: str = os.getenv("SERVICE_HOST", "0.0.0.0")
     
     # External services URLs - Updated with live system URLs
-    user_service_url: str = os.getenv("USER_SERVICE_URL", "http://34.118.167.199.nip.io")
+    user_service_url: str = os.getenv("USER_SERVICE_URL", "https://34.95.5.30.nip.io/user")
     cart_service_url: str = os.getenv("CART_SERVICE_URL", "https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com")
     product_service_url: str = os.getenv("PRODUCT_SERVICE_URL", "https://ecommerce-product-service-56575270905a.herokuapp.com")
     search_service_url: str = os.getenv("SEARCH_SERVICE_URL", "https://ecommerce-microservices-platform.onrender.com")
@@ -35,8 +35,14 @@ class Settings(BaseSettings):
     redis_url: str = os.getenv("REDIS_URL")
     
     # Environment settings
-    environment: str = os.getenv("ENVIRONMENT", "development")
+    environment: str = os.getenv("ENVIRONMENT", "production")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
+    
+    # CORS settings
+    cors_origins: Optional[str] = os.getenv("CORS_ORIGINS")
+    cors_methods: str = os.getenv("CORS_METHODS", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+    cors_headers: str = os.getenv("CORS_HEADERS", "Content-Type,Authorization,X-Requested-With,Accept,Origin")
+    cors_credentials: bool = os.getenv("CORS_CREDENTIALS", "true").lower() == "true"
     
     def __post_init__(self):
         """Validate required environment variables"""
