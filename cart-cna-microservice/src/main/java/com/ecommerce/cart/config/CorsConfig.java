@@ -54,11 +54,13 @@ public class CorsConfig {
         if ("production".equals(activeProfile)) {
             return Arrays.asList(
                 "https://ecommerce-microservices-platform.vercel.app",
+                "https://ecommerce-app-omega-two-64.vercel.app",  // ✅ ADD THIS
                 "https://ecommerce-product-service-56575270905a.herokuapp.com"
             );
         } else {
             return Arrays.asList(
                 "https://ecommerce-microservices-platform.vercel.app",
+                "https://ecommerce-app-omega-two-64.vercel.app",  // ✅ ADD THIS
                 "http://localhost:3000",
                 "http://localhost:8080",
                 "http://localhost:3001"

@@ -28,6 +28,7 @@ spring:
       path-pattern: "/**"
       allowed-origins:
         - "https://ecommerce-microservices-platform.vercel.app"
+        - "https://ecommerce-app-omega-two-64.vercel.app"  # ✅ ADD THIS LINE
         - "http://34.118.167.199.nip.io"
         - "http://localhost:3000"
         - "http://localhost:8080"
