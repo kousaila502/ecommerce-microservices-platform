@@ -82,7 +82,34 @@ const AdminUserManagement: React.FC = () => {
     } as CreateUserData
   });
 
-  // ...existing state variables...
+  // Action menu state
+  const [actionMenuState, setActionMenuState] = useState<{
+    anchorEl: HTMLElement | null;
+    selectedUserId: number | null;
+  }>({
+    anchorEl: null,
+    selectedUserId: null
+  });
+
+  // User details dialog state
+  const [userDetailsDialog, setUserDetailsDialog] = useState<{
+    open: boolean;
+    user: User | null;
+  }>({
+    open: false,
+    user: null
+  });
+
+  // Block user dialog state
+  const [blockUserDialog, setBlockUserDialog] = useState<{
+    open: boolean;
+    user: User | null;
+    reason: string;
+  }>({
+    open: false,
+    user: null,
+    reason: ''
+  });
 
   // NEW: Create user function
   const handleCreateUser = async () => {
@@ -142,6 +169,112 @@ const AdminUserManagement: React.FC = () => {
       setError(err.message || 'Failed to create user');
     } finally {
       setCreateUserDialog(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  // Action menu handlers
+  const handleActionMenuOpen = (event: React.MouseEvent<HTMLElement>, userId: number) => {
+    setActionMenuState({
+      anchorEl: event.currentTarget,
+      selectedUserId: userId
+    });
+  };
+
+  const handleActionMenuClose = () => {
+    setActionMenuState({
+      anchorEl: null,
+      selectedUserId: null
+    });
+  };
+
+  // User action handlers
+  const handleViewUserDetails = (user: User) => {
+    setUserDetailsDialog({ open: true, user });
+    handleActionMenuClose();
+  };
+
+  const handleBlockUser = (user: User) => {
+    setBlockUserDialog({ open: true, user, reason: '' });
+    handleActionMenuClose();
+  };
+
+  const handleUnblockUser = async (userId: number) => {
+    if (!token) return;
+
+    try {
+      const response = await fetch(apiUrl.admin(`users/${userId}/unblock`), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setSuccess('User unblocked successfully');
+        fetchUsers();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to unblock user');
+      }
+    } catch (err) {
+      setError('Failed to unblock user');
+    }
+
+    handleActionMenuClose();
+  };
+
+  const handleSuspendUser = async (userId: number) => {
+    if (!token) return;
+
+    try {
+      const response = await fetch(apiUrl.admin(`users/${userId}/suspend`), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason: 'Suspended by admin' })
+      });
+
+      if (response.ok) {
+        setSuccess('User suspended successfully');
+        fetchUsers();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to suspend user');
+      }
+    } catch (err) {
+      setError('Failed to suspend user');
+    }
+
+    handleActionMenuClose();
+  };
+
+  // Block user confirmation
+  const confirmBlockUser = async () => {
+    if (!token || !blockUserDialog.user) return;
+
+    try {
+      const response = await fetch(apiUrl.admin(`users/${blockUserDialog.user.id}/block`), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason: blockUserDialog.reason || 'Blocked by admin' })
+      });
+
+      if (response.ok) {
+        setSuccess('User blocked successfully');
+        fetchUsers();
+        setBlockUserDialog({ open: false, user: null, reason: '' });
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to block user');
+      }
+    } catch (err) {
+      setError('Failed to block user');
     }
   };
 
@@ -407,9 +540,7 @@ const AdminUserManagement: React.FC = () => {
                     <TableCell align="center">
                       <IconButton
                         size="small"
-                        onClick={(e) => {
-                          // Handle user actions (view, edit, block, etc.)
-                        }}
+                        onClick={(e) => handleActionMenuOpen(e, user.id)}
                       >
                         <MoreVertIcon />
                       </IconButton>
@@ -532,6 +663,166 @@ const AdminUserManagement: React.FC = () => {
               startIcon={createUserDialog.loading ? <CircularProgress size={20} /> : <PersonAddIcon />}
             >
               {createUserDialog.loading ? 'Creating...' : 'Create User'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Action Menu */}
+        <Menu
+          anchorEl={actionMenuState.anchorEl}
+          open={Boolean(actionMenuState.anchorEl)}
+          onClose={handleActionMenuClose}
+          onClick={handleActionMenuClose}
+        >
+          {actionMenuState.selectedUserId && (() => {
+            const selectedUser = users.find(u => u.id === actionMenuState.selectedUserId);
+            if (!selectedUser) return null;
+
+            return [
+              <MenuItem key="view" onClick={() => handleViewUserDetails(selectedUser)}>
+                <ListItemIcon><ViewIcon fontSize="small" /></ListItemIcon>
+                <ListItemText>View Details</ListItemText>
+              </MenuItem>,
+
+              selectedUser.status === 'active' ? [
+                <MenuItem key="block" onClick={() => handleBlockUser(selectedUser)}>
+                  <ListItemIcon><BlockIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText>Block User</ListItemText>
+                </MenuItem>,
+                <MenuItem key="suspend" onClick={() => handleSuspendUser(selectedUser.id)}>
+                  <ListItemIcon><SuspendIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText>Suspend User</ListItemText>
+                </MenuItem>
+              ] : (
+                <MenuItem key="unblock" onClick={() => handleUnblockUser(selectedUser.id)}>
+                  <ListItemIcon><UnblockIcon fontSize="small" /></ListItemIcon>
+                  <ListItemText>Unblock User</ListItemText>
+                </MenuItem>
+              )
+            ];
+          })()}
+        </Menu>
+
+        {/* User Details Dialog */}
+        <Dialog
+          open={userDetailsDialog.open}
+          onClose={() => setUserDetailsDialog({ open: false, user: null })}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>User Details</DialogTitle>
+          <DialogContent>
+            {userDetailsDialog.user && (
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Name"
+                    value={userDetailsDialog.user.name}
+                    InputProps={{ readOnly: true }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    value={userDetailsDialog.user.email}
+                    InputProps={{ readOnly: true }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Mobile"
+                    value={userDetailsDialog.user.mobile}
+                    InputProps={{ readOnly: true }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Role"
+                    value={userDetailsDialog.user.role}
+                    InputProps={{ readOnly: true }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Status"
+                    value={userDetailsDialog.user.status}
+                    InputProps={{ readOnly: true }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Created At"
+                    value={formatDate(userDetailsDialog.user.created_at)}
+                    InputProps={{ readOnly: true }}
+                  />
+                </Grid>
+                {userDetailsDialog.user.last_login && (
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Last Login"
+                      value={formatDate(userDetailsDialog.user.last_login)}
+                      InputProps={{ readOnly: true }}
+                    />
+                  </Grid>
+                )}
+                {userDetailsDialog.user.blocked_reason && (
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Block Reason"
+                      value={userDetailsDialog.user.blocked_reason}
+                      multiline
+                      rows={3}
+                      InputProps={{ readOnly: true }}
+                    />
+                  </Grid>
+                )}
+              </Grid>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setUserDetailsDialog({ open: false, user: null })}>
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Block User Dialog */}
+        <Dialog
+          open={blockUserDialog.open}
+          onClose={() => setBlockUserDialog({ open: false, user: null, reason: '' })}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Block User</DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ mb: 2 }}>
+              Are you sure you want to block {blockUserDialog.user?.name}? This will prevent them from accessing the system.
+            </DialogContentText>
+            <TextField
+              fullWidth
+              label="Reason (optional)"
+              value={blockUserDialog.reason}
+              onChange={(e) => setBlockUserDialog(prev => ({ ...prev, reason: e.target.value }))
+              }
+              multiline
+              rows={3}
+              placeholder="Enter reason for blocking this user..."
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setBlockUserDialog({ open: false, user: null, reason: '' })}>
+              Cancel
+            </Button>
+            <Button onClick={confirmBlockUser} variant="contained" color="error">
+              Block User
             </Button>
           </DialogActions>
         </Dialog>
