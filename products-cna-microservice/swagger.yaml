@@ -1,642 +1,331 @@
-openapi: 3.0.3
+openapi: 3.0.0
 info:
-  title: Product Service API
-  description: |
-    E-Commerce Product Microservice API
-
-    This service manages product catalog including:
-    - Product CRUD operations
-    - Product search and filtering
-    - SKU-based product retrieval
-    - Deals management
-
-    **Base URLs:**
-    - Production: `https://ecommerce-product-service-56575270905a.herokuapp.com`
-    - Development: `http://localhost:3001`
+  title: Products & Deals Service API
+  description: Microservice for managing products and deals
   version: 1.0.0
   contact:
-    name: Product Service API
-    email: support@ecommerce-platform.com
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
+    name: API Support
+    email: support@ecommerce.com
 
 servers:
-  - url: https://ecommerce-product-service-56575270905a.herokuapp.com
-    description: Production server
   - url: http://localhost:3001
     description: Development server
-
-tags:
-  - name: Health
-    description: Service health and status endpoints
-  - name: Products
-    description: Product management operations
-  - name: Deals
-    description: Product deals and promotions
+  - url: https://34.95.5.30.nip.io
+    description: Production server
 
 paths:
-  /health:
-    get:
-      tags:
-        - Health
-      summary: Health check
-      description: Returns the current health status of the service
-      responses:
-        "200":
-          description: Service is healthy
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HealthResponse"
-              example:
-                status: "healthy"
-                service: "product-service"
-                version: "1.0.0"
-                environment: "production"
-                timestamp: "2025-08-07T15:30:00.000Z"
-                database: "connected"
-
+  # PRODUCTS ENDPOINTS
   /products:
     get:
-      tags:
-        - Products
+      tags: [Products]
       summary: Get all products
-      description: |
-        Retrieve a list of products with optional filtering
-
-        **Query Parameters:**
-        - `limit`: Maximum number of products to return (default: 50)
-        - `department`: Filter by department
-        - `category`: Filter by category
-        - `brand`: Filter by brand
-        - `minPrice`: Minimum price filter
-        - `maxPrice`: Maximum price filter
-        - `search`: Search term for product title/description
       parameters:
         - name: limit
           in: query
-          description: Maximum number of products to return
-          required: false
           schema:
             type: integer
-            minimum: 1
-            maximum: 100
             default: 50
         - name: department
           in: query
-          description: Filter by department
-          required: false
           schema:
             type: string
-            example: "Electronics"
-        - name: category
-          in: query
-          description: Filter by category
-          required: false
-          schema:
-            type: string
-            example: "Smartphones"
-        - name: brand
-          in: query
-          description: Filter by brand
-          required: false
-          schema:
-            type: string
-            example: "Apple"
-        - name: minPrice
-          in: query
-          description: Minimum price filter
-          required: false
-          schema:
-            type: number
-            minimum: 0
-            example: 100.00
-        - name: maxPrice
-          in: query
-          description: Maximum price filter
-          required: false
-          schema:
-            type: number
-            minimum: 0
-            example: 1000.00
         - name: search
           in: query
-          description: Search term for product title or description
-          required: false
           schema:
             type: string
-            example: "smartphone"
       responses:
-        "200":
-          description: Products retrieved successfully
+        200:
+          description: Success
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductListResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Product"
     post:
-      tags:
-        - Products
-      summary: Create a new product
-      description: Add a new product to the catalog
+      tags: [Products]
+      summary: Create new product
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ProductInput"
-            example:
-              title: "iPhone 15 Pro"
-              description: "Latest Apple smartphone with advanced features"
-              price: 999.99
-              sku: "IPH15PRO128"
-              category: "Smartphones"
-              department: "Electronics"
-              brand: "Apple"
-              stock: 50
-              image: "https://example.com/images/iphone15pro.jpg"
+              $ref: "#/components/schemas/ProductCreate"
       responses:
-        "201":
+        201:
           description: Product created successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProductResponse"
-        "400":
-          description: Bad request - validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/stats:
+    get:
+      tags: [Products]
+      summary: Get product statistics
+      responses:
+        200:
+          description: Product statistics
 
   /products/{id}:
     get:
-      tags:
-        - Products
+      tags: [Products]
       summary: Get product by ID
-      description: Retrieve a specific product by its unique ID
       parameters:
         - name: id
           in: path
           required: true
-          description: Product unique identifier
           schema:
             type: integer
-            example: 301671
       responses:
-        "200":
-          description: Product found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProductResponse"
-        "404":
+        200:
+          description: Success
+        404:
           description: Product not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
 
-    put:
-      tags:
-        - Products
-      summary: Update product
-      description: Update an existing product by ID
+  # DEALS ENDPOINTS
+  /deals:
+    get:
+      tags: [Deals]
+      summary: Get all deals
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Product unique identifier
+        - name: limit
+          in: query
           schema:
             type: integer
-            example: 301671
+            default: 50
+        - name: department
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Deal"
+    post:
+      tags: [Deals]
+      summary: Create new deal
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ProductInput"
-            example:
-              title: "iPhone 15 Pro Max"
-              price: 1199.99
-              stock: 25
+              $ref: "#/components/schemas/DealCreate"
       responses:
-        "200":
-          description: Product updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProductResponse"
-        "400":
-          description: Bad request - validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: Product not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+        201:
+          description: Deal created successfully
 
-    delete:
-      tags:
-        - Products
-      summary: Delete product (soft delete)
-      description: Soft delete a product by setting isActive to false
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Product unique identifier
-          schema:
-            type: integer
-            example: 301671
+  /deals/seed:
+    post:
+      tags: [Deals]
+      summary: Seed deals from sample data
       responses:
-        "200":
-          description: Product deleted successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProductResponse"
-        "404":
-          description: Product not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+        201:
+          description: Deals seeded successfully
 
-  /products/sku/{sku}:
+  /deals/stats:
     get:
-      tags:
-        - Products
-      summary: Get product by SKU
-      description: Retrieve a specific product by its SKU (Stock Keeping Unit)
-      parameters:
-        - name: sku
-          in: path
-          required: true
-          description: Product SKU
-          schema:
-            type: string
-            example: "IPH15PRO128"
+      tags: [Deals]
+      summary: Get deal statistics
       responses:
-        "200":
-          description: Product found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProductResponse"
-        "404":
-          description: Product not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+        200:
+          description: Deal statistics
 
-  /products/search/{term}:
+  /deals/search/{term}:
     get:
-      tags:
-        - Products
-      summary: Search products
-      description: Search products by term in title or description
+      tags: [Deals]
+      summary: Search deals
       parameters:
         - name: term
           in: path
           required: true
-          description: Search term
           schema:
             type: string
-            example: "smartphone"
         - name: limit
           in: query
-          description: Maximum number of results
-          required: false
           schema:
             type: integer
-            minimum: 1
-            maximum: 100
             default: 20
       responses:
-        "200":
+        200:
           description: Search results
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProductListResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
 
-  /deals:
+  /deals/top-rated:
     get:
-      tags:
-        - Deals
-      summary: Get all deals
-      description: Retrieve a list of current deals and promotions
+      tags: [Deals]
+      summary: Get top rated deals
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
       responses:
-        "200":
-          description: Deals retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Deal"
-        "400":
-          description: Error fetching deals
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+        200:
+          description: Top rated deals
+
+  /deals/{id}:
+    get:
+      tags: [Deals]
+      summary: Get deal by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Success
+        404:
+          description: Deal not found
+    put:
+      tags: [Deals]
+      summary: Update deal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DealUpdate"
+      responses:
+        200:
+          description: Deal updated successfully
+    delete:
+      tags: [Deals]
+      summary: Delete deal (soft delete)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Deal deleted successfully
 
 components:
   schemas:
     Product:
       type: object
-      required:
-        - _id
-        - sku
-        - title
-        - price
       properties:
         _id:
           type: integer
-          description: Unique product identifier
-          example: 301671
         sku:
           type: string
-          description: Stock Keeping Unit
-          example: "IPH15PRO128"
         title:
           type: string
-          description: Product title
-          example: "iPhone 15 Pro"
-        description:
-          type: string
-          description: Product description
-          example: "Latest Apple smartphone with advanced features"
         price:
           type: number
-          format: float
-          minimum: 0
-          description: Product price
-          example: 999.99
-        currency:
-          type: string
-          description: Price currency
-          default: "USD"
-          example: "USD"
-        category:
-          type: string
-          description: Product category
-          example: "Smartphones"
         department:
           type: string
-          description: Product department
-          example: "Electronics"
-        image:
-          type: string
-          format: uri
-          description: Product image URL
-          example: "https://example.com/images/iphone15pro.jpg"
-        stock:
-          type: integer
-          minimum: 0
-          description: Available stock quantity
-          example: 50
         rating:
           type: number
-          format: float
-          minimum: 0
-          maximum: 5
-          description: Product rating
-          example: 4.5
-        brand:
-          type: string
-          description: Product brand
-          example: "Apple"
+        stock:
+          type: integer
         isActive:
           type: boolean
-          description: Whether the product is active
-          default: true
-        createdAt:
-          type: string
-          format: date-time
-          description: Product creation timestamp
-        updatedAt:
-          type: string
-          format: date-time
-          description: Product last update timestamp
 
-    ProductInput:
+    ProductCreate:
       type: object
-      required:
-        - title
-        - price
-        - sku
+      required: [title, sku, price, department]
       properties:
         title:
           type: string
-          description: Product title
-          example: "iPhone 15 Pro"
-        description:
-          type: string
-          description: Product description
-          example: "Latest Apple smartphone with advanced features"
-        price:
-          type: number
-          format: float
-          minimum: 0
-          description: Product price
-          example: 999.99
         sku:
           type: string
-          description: Stock Keeping Unit (must be unique)
-          example: "IPH15PRO128"
-        category:
-          type: string
-          description: Product category
-          example: "Smartphones"
+        price:
+          type: number
         department:
           type: string
-          description: Product department
-          example: "Electronics"
-        image:
+        description:
           type: string
-          format: uri
-          description: Product image URL
-          example: "https://example.com/images/iphone15pro.jpg"
         stock:
           type: integer
-          minimum: 0
-          description: Available stock quantity
-          example: 50
-        brand:
-          type: string
-          description: Product brand
-          example: "Apple"
-
-    ProductResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: "Product retrieved successfully"
-        data:
-          $ref: "#/components/schemas/Product"
-
-    ProductListResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        count:
-          type: integer
-          description: Number of products returned
-          example: 25
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/Product"
+        rating:
+          type: number
 
     Deal:
       type: object
       properties:
-        _id:
-          type: string
-          description: Deal unique identifier
+        dealId:
+          type: integer
+        productId:
+          type: integer
         title:
           type: string
-          description: Deal title
         description:
           type: string
-          description: Deal description
-        discount:
+        price:
           type: number
-          format: float
-          description: Discount percentage
-        validUntil:
+        department:
           type: string
-          format: date-time
-          description: Deal expiration date
-
-    HealthResponse:
-      type: object
-      properties:
-        status:
+        rating:
+          type: number
+        currency:
           type: string
-          enum: [healthy, unhealthy]
-          example: "healthy"
-        service:
-          type: string
-          example: "product-service"
-        version:
-          type: string
-          example: "1.0.0"
-        environment:
-          type: string
-          example: "production"
-        timestamp:
-          type: string
-          format: date-time
-          example: "2025-08-07T15:30:00.000Z"
-        database:
-          type: string
-          example: "connected"
-
-    ErrorResponse:
-      type: object
-      properties:
-        success:
+        isActive:
           type: boolean
-          example: false
-        error:
-          type: string
-          description: Error message
-          example: "Product not found"
-        timestamp:
+        lastUpdated:
           type: string
           format: date-time
-          example: "2025-08-07T15:30:00.000Z"
 
-  responses:
-    NotFound:
-      description: Resource not found
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
+    DealCreate:
+      type: object
+      required: [productId, title, description, price, department]
+      properties:
+        productId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        department:
+          type: string
+        variantSku:
+          type: string
+        rating:
+          type: number
+        currency:
+          type: string
 
-    BadRequest:
-      description: Bad request - validation error
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
+    DealUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        rating:
+          type: number
 
-    InternalServerError:
-      description: Internal server error
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-
-# Security Schemes (for future authentication implementation)
-security: []
-
-# External Documentation
-externalDocs:
-  description: Product Service Repository
-  url: https://github.com/kousaila502/ecommerce-microservices-platform
+tags:
+  - name: Products
+    description: Product management operations
+  - name: Deals
+    description: Deal management operations

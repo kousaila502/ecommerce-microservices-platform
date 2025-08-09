@@ -1,4 +1,4 @@
-// db/conn.js - SECURED VERSION
+// db/conn.js - FIXED VERSION
 const mongoose = require('mongoose');
 
 let _db;
@@ -14,15 +14,12 @@ module.exports = {
       return callback(error);
     }
 
-    // ✅ SECURE: Enhanced connection options
+    // ✅ FIXED: Updated connection options for Mongoose 8.x
     const connectionOptions = {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       maxPoolSize: 10, // Maintain up to 10 socket connections
       serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
       socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      bufferMaxEntries: 0, // Disable mongoose buffering
-      bufferCommands: false, // Disable mongoose buffering
+      // Removed deprecated options: bufferMaxEntries, bufferCommands, useNewUrlParser, useUnifiedTopology
     };
 
     mongoose.connect(connectionString, connectionOptions)
@@ -48,15 +45,10 @@ module.exports = {
   },
 
   // Keep for backward compatibility if needed
-  getMongoose: function () {
-    return mongoose;
-  },
-
-  // ✅ NEW: Graceful connection close
   closeConnection: function () {
     if (_db) {
-      mongoose.connection.close();
-      console.log('📴 MongoDB connection closed');
+      mongoose.disconnect();
+      console.log('🔚 MongoDB connection closed');
     }
   }
 };

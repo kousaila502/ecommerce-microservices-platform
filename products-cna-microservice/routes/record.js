@@ -1,38 +1,10 @@
-// routes/record.js - UPDATED FOR SIMPLIFIED PRODUCT MODEL
+// routes/record.js - PRODUCTS ONLY (CLEAN VERSION)
 
 const express = require('express');
 const ProductService = require('../services/productService');
 
 // recordRoutes is an instance of the express router.
 const recordRoutes = express.Router();
-
-// This will help us connect to the database (keeping for deals if needed)
-const dbo = require('../db/conn');
-
-// ================================
-// DEALS ROUTES (Keep existing functionality)
-// ================================
-
-// Get all deals (keeping existing functionality)
-recordRoutes.route('/deals').get(async function (_req, res) {
-  try {
-    const dbConnect = dbo.getDb();
-
-    dbConnect
-      .collection('deals')
-      .find({})
-      .limit(50)
-      .toArray(function (err, result) {
-        if (err) {
-          res.status(400).send('Error fetching deals!');
-        } else {
-          res.json(result);
-        }
-      });
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 // ================================
 // PRODUCT ROUTES (Updated for simplified model)
@@ -72,37 +44,139 @@ recordRoutes.route('/products').get(async function (req, res) {
       data: products
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 });
 
-// Get single product by ID
-recordRoutes.route('/products/:id').get(async function (req, res) {
+// ================================
+// SPECIFIC ROUTES (MUST COME BEFORE :id ROUTE)
+// ================================
+
+// Get product statistics - MOVED UP TO AVOID ROUTE CONFLICT
+recordRoutes.route('/products/stats').get(async function (req, res) {
   try {
-    const product = await ProductService.getProductById(req.params.id);
+    const stats = await ProductService.getProductStats();
     res.json({
       success: true,
-      data: product
+      data: stats
     });
   } catch (error) {
-    if (error.message.includes('not found')) {
-      res.status(404).json({ 
-        success: false, 
-        error: error.message 
-      });
-    } else {
-      res.status(500).json({ 
-        success: false, 
-        error: error.message 
-      });
-    }
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 });
 
-// Get product by SKU (SIMPLIFIED - no more variant SKUs)
+// Search products - MOVED UP TO AVOID ROUTE CONFLICT
+recordRoutes.route('/products/search/:term').get(async function (req, res) {
+  try {
+    const limit = parseInt(req.query.limit) || 20;
+    const products = await ProductService.searchProducts(req.params.term, limit);
+    res.json({
+      success: true,
+      searchTerm: req.params.term,
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get products by department - MOVED UP TO AVOID ROUTE CONFLICT
+recordRoutes.route('/products/department/:department').get(async function (req, res) {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const products = await ProductService.getProductsByDepartment(req.params.department, limit);
+    res.json({
+      success: true,
+      department: req.params.department,
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get products by category - MOVED UP TO AVOID ROUTE CONFLICT
+recordRoutes.route('/products/category/:category').get(async function (req, res) {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const products = await ProductService.getProductsByCategory(req.params.category, limit);
+    res.json({
+      success: true,
+      category: req.params.category,
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get products by brand - MOVED UP TO AVOID ROUTE CONFLICT
+recordRoutes.route('/products/brand/:brand').get(async function (req, res) {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const products = await ProductService.getProductsByBrand(req.params.brand, limit);
+    res.json({
+      success: true,
+      brand: req.params.brand,
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get products by price range - MOVED UP TO AVOID ROUTE CONFLICT
+recordRoutes.route('/products/price/:minPrice/:maxPrice').get(async function (req, res) {
+  try {
+    const minPrice = parseFloat(req.params.minPrice);
+    const maxPrice = parseFloat(req.params.maxPrice);
+    const limit = parseInt(req.query.limit) || 50;
+
+    if (isNaN(minPrice) || isNaN(maxPrice)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid price range. Please provide valid numbers.'
+      });
+    }
+
+    const products = await ProductService.getProductsByPriceRange(minPrice, maxPrice, limit);
+    res.json({
+      success: true,
+      priceRange: { min: minPrice, max: maxPrice },
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get product by SKU - MOVED UP TO AVOID ROUTE CONFLICT
 recordRoutes.route('/products/sku/:sku').get(async function (req, res) {
   try {
     const product = await ProductService.getProductBySku(req.params.sku);
@@ -112,14 +186,60 @@ recordRoutes.route('/products/sku/:sku').get(async function (req, res) {
     });
   } catch (error) {
     if (error.message.includes('not found')) {
-      res.status(404).json({ 
-        success: false, 
-        error: error.message 
+      res.status(404).json({
+        success: false,
+        error: error.message
       });
     } else {
-      res.status(500).json({ 
-        success: false, 
-        error: error.message 
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+});
+
+// Get low stock products - MOVED UP TO AVOID ROUTE CONFLICT
+recordRoutes.route('/products/inventory/low-stock').get(async function (req, res) {
+  try {
+    const threshold = parseInt(req.query.threshold) || 10;
+    const products = await ProductService.getLowStockProducts(threshold);
+    res.json({
+      success: true,
+      threshold: threshold,
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ================================
+// PARAMETERIZED ROUTES (MUST COME AFTER SPECIFIC ROUTES)
+// ================================
+
+// Get single product by ID - MOVED DOWN TO AVOID ROUTE CONFLICTS
+recordRoutes.route('/products/:id').get(async function (req, res) {
+  try {
+    const product = await ProductService.getProductById(req.params.id);
+    res.json({
+      success: true,
+      data: product
+    });
+  } catch (error) {
+    if (error.message.includes('not found')) {
+      res.status(404).json({
+        success: false,
+        error: error.message
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: error.message
       });
     }
   }
@@ -135,9 +255,9 @@ recordRoutes.route('/products').post(async function (req, res) {
       data: product
     });
   } catch (error) {
-    res.status(400).json({ 
-      success: false, 
-      error: error.message 
+    res.status(400).json({
+      success: false,
+      error: error.message
     });
   }
 });
@@ -153,14 +273,14 @@ recordRoutes.route('/products/:id').put(async function (req, res) {
     });
   } catch (error) {
     if (error.message.includes('not found')) {
-      res.status(404).json({ 
-        success: false, 
-        error: error.message 
+      res.status(404).json({
+        success: false,
+        error: error.message
       });
     } else {
-      res.status(400).json({ 
-        success: false, 
-        error: error.message 
+      res.status(400).json({
+        success: false,
+        error: error.message
       });
     }
   }
@@ -177,163 +297,31 @@ recordRoutes.route('/products/:id').delete(async function (req, res) {
     });
   } catch (error) {
     if (error.message.includes('not found')) {
-      res.status(404).json({ 
-        success: false, 
-        error: error.message 
+      res.status(404).json({
+        success: false,
+        error: error.message
       });
     } else {
-      res.status(500).json({ 
-        success: false, 
-        error: error.message 
-      });
-    }
-  }
-});
-
-// ================================
-// NEW ENHANCED ROUTES
-// ================================
-
-// Search products
-recordRoutes.route('/products/search/:term').get(async function (req, res) {
-  try {
-    const limit = parseInt(req.query.limit) || 20;
-    const products = await ProductService.searchProducts(req.params.term, limit);
-    res.json({
-      success: true,
-      searchTerm: req.params.term,
-      count: products.length,
-      data: products
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Get products by department
-recordRoutes.route('/products/department/:department').get(async function (req, res) {
-  try {
-    const limit = parseInt(req.query.limit) || 50;
-    const products = await ProductService.getProductsByDepartment(req.params.department, limit);
-    res.json({
-      success: true,
-      department: req.params.department,
-      count: products.length,
-      data: products
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Get products by category
-recordRoutes.route('/products/category/:category').get(async function (req, res) {
-  try {
-    const limit = parseInt(req.query.limit) || 50;
-    const products = await ProductService.getProductsByCategory(req.params.category, limit);
-    res.json({
-      success: true,
-      category: req.params.category,
-      count: products.length,
-      data: products
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Get products by brand
-recordRoutes.route('/products/brand/:brand').get(async function (req, res) {
-  try {
-    const limit = parseInt(req.query.limit) || 50;
-    const products = await ProductService.getProductsByBrand(req.params.brand, limit);
-    res.json({
-      success: true,
-      brand: req.params.brand,
-      count: products.length,
-      data: products
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Get products by price range
-recordRoutes.route('/products/price/:minPrice/:maxPrice').get(async function (req, res) {
-  try {
-    const minPrice = parseFloat(req.params.minPrice);
-    const maxPrice = parseFloat(req.params.maxPrice);
-    const limit = parseInt(req.query.limit) || 50;
-    
-    if (isNaN(minPrice) || isNaN(maxPrice)) {
-      return res.status(400).json({
+      res.status(500).json({
         success: false,
-        error: 'Invalid price range. Please provide valid numbers.'
+        error: error.message
       });
     }
-    
-    const products = await ProductService.getProductsByPriceRange(minPrice, maxPrice, limit);
-    res.json({
-      success: true,
-      priceRange: { min: minPrice, max: maxPrice },
-      count: products.length,
-      data: products
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
   }
 });
 
-// ================================
-// INVENTORY MANAGEMENT ROUTES
-// ================================
-
-// Get low stock products
-recordRoutes.route('/products/inventory/low-stock').get(async function (req, res) {
-  try {
-    const threshold = parseInt(req.query.threshold) || 10;
-    const products = await ProductService.getLowStockProducts(threshold);
-    res.json({
-      success: true,
-      threshold: threshold,
-      count: products.length,
-      data: products
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Update product stock
+// Update product stock - PARAMETERIZED ROUTE
 recordRoutes.route('/products/:id/stock').patch(async function (req, res) {
   try {
     const { stock } = req.body;
-    
+
     if (stock === undefined || stock < 0) {
       return res.status(400).json({
         success: false,
         error: 'Stock must be a non-negative number'
       });
     }
-    
+
     const product = await ProductService.updateStock(req.params.id, stock);
     res.json({
       success: true,
@@ -342,44 +330,20 @@ recordRoutes.route('/products/:id/stock').patch(async function (req, res) {
     });
   } catch (error) {
     if (error.message.includes('not found')) {
-      res.status(404).json({ 
-        success: false, 
-        error: error.message 
+      res.status(404).json({
+        success: false,
+        error: error.message
       });
     } else {
-      res.status(400).json({ 
-        success: false, 
-        error: error.message 
+      res.status(400).json({
+        success: false,
+        error: error.message
       });
     }
   }
 });
 
-// ================================
-// ANALYTICS ROUTES
-// ================================
-
-// Get product statistics
-recordRoutes.route('/products/stats').get(async function (req, res) {
-  try {
-    const stats = await ProductService.getProductStats();
-    res.json({
-      success: true,
-      data: stats
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// ================================
-// ADMIN ROUTES
-// ================================
-
-// Hard delete product (admin only)
+// Hard delete product - PARAMETERIZED ROUTE
 recordRoutes.route('/products/:id/hard-delete').delete(async function (req, res) {
   try {
     const product = await ProductService.hardDeleteProduct(req.params.id);
@@ -390,40 +354,53 @@ recordRoutes.route('/products/:id/hard-delete').delete(async function (req, res)
     });
   } catch (error) {
     if (error.message.includes('not found')) {
-      res.status(404).json({ 
-        success: false, 
-        error: error.message 
+      res.status(404).json({
+        success: false,
+        error: error.message
       });
     } else {
-      res.status(500).json({ 
-        success: false, 
-        error: error.message 
+      res.status(500).json({
+        success: false,
+        error: error.message
       });
     }
   }
 });
 
-// Restore soft-deleted product (admin only)
+// Restore soft-deleted product - FIXED VERSION USING SERVICE
 recordRoutes.route('/products/:id/restore').patch(async function (req, res) {
   try {
-    const product = await ProductService.updateProduct(req.params.id, { isActive: true });
+    // Use ProductService.updateProduct but remove the isActive filter
+    const productId = parseInt(req.params.id);
+
+    // First check if product exists (regardless of isActive status)
+    const Product = require('../models/product');
+    const existingProduct = await Product.findOne({ _id: productId });
+
+    if (!existingProduct) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+
+    // Update the product to restore it
+    const product = await Product.findOneAndUpdate(
+      { _id: productId },
+      { isActive: true, updatedAt: new Date() },
+      { new: true }
+    );
+
     res.json({
       success: true,
       message: 'Product restored successfully',
       data: product
     });
   } catch (error) {
-    if (error.message.includes('not found')) {
-      res.status(404).json({ 
-        success: false, 
-        error: error.message 
-      });
-    } else {
-      res.status(500).json({ 
-        success: false, 
-        error: error.message 
-      });
-    }
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 });
 

@@ -32,19 +32,28 @@ const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const app = express();
 
-/* ✅ SECURE: Enhanced CORS configuration */
-const allowedOrigins = process.env.NODE_ENV === 'production'
+/* ✅ SECURE: Dynamic CORS configuration from environment */
+const defaultOrigins = process.env.NODE_ENV === 'production'
   ? [
-    'https://ecommerce-microservices-platform.vercel.app',
+    'https://ecommerce-app-omega-two-64.vercel.app',
     'https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com',
-    'http://34.118.167.199.nip.io'
+    'https://34.95.5.30.nip.io',
+    'http://34.95.5.30.nip.io'
   ]
   : [
-    'https://ecommerce-microservices-platform.vercel.app',
-    'http://34.118.167.199.nip.io',  
+    'https://ecommerce-app-omega-two-64.vercel.app',
+    'https://34.95.5.30.nip.io',
+    'http://34.95.5.30.nip.io',
     'http://localhost:3000',
     'http://localhost:8080'
   ];
+
+// Use environment variable or defaults
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+  : defaultOrigins;
+
+console.log('🌐 CORS Allowed Origins:', allowedOrigins);
 
 app.use(cors({
   origin: allowedOrigins,
@@ -60,6 +69,7 @@ app.use(express.json({
 }));
 
 app.use(require('./routes/record'));
+app.use(require('./routes/deals')); // ADD THIS LINE
 
 /* ✅ SECURE: Enhanced health check with environment info */
 app.get('/health', (req, res) => {
