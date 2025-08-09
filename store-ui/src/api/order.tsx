@@ -1,4 +1,4 @@
-import axiosClient, { ordersUrl } from "./config"
+import axiosClient, { apiUrl } from "./config"
 
 // UPDATED: Order interfaces
 export interface ShippingAddress {
@@ -47,13 +47,13 @@ export interface CreateOrderPayload {
     notes?: string;
 }
 
-// UPDATED: Create order (simplified - no items needed, gets from cart)
+// UPDATED: Create order (using apiUrl helper correctly)
 export const createOrder = async (
     payload: CreateOrderPayload,
     token: string
 ): Promise<Order | null> => {
     try {
-        const response = await axiosClient.post(`${ordersUrl}/`, payload, {
+        const response = await axiosClient.post(apiUrl.orders(''), payload, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -65,10 +65,10 @@ export const createOrder = async (
     }
 };
 
-// Get user's orders
+// Get user's orders (using apiUrl helper correctly)
 export const getUserOrders = async (token: string, page: number = 1, size: number = 10): Promise<Order[] | null> => {
     try {
-        const response = await axiosClient.get(`${ordersUrl}?page=${page}&size=${size}`, {
+        const response = await axiosClient.get(apiUrl.orders(`?page=${page}&size=${size}`), {
             headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;
@@ -78,10 +78,10 @@ export const getUserOrders = async (token: string, page: number = 1, size: numbe
     }
 };
 
-// Get order by ID
+// Get order by ID (FIXED: use apiUrl.orders() correctly)
 export const getOrderById = async (id: number, token: string): Promise<Order | null> => {
     try {
-        const response = await axiosClient.get(`${ordersUrl}/${id}`, {
+        const response = await axiosClient.get(apiUrl.orders(`${id}`), {
             headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;
@@ -91,10 +91,10 @@ export const getOrderById = async (id: number, token: string): Promise<Order | n
     }
 };
 
-// ADMIN: Get all orders
+// ADMIN: Get all orders (FIXED: use apiUrl.orders() correctly)
 export const getAllOrders = async (token: string, page: number = 1, size: number = 20): Promise<Order[] | null> => {
     try {
-        const response = await axiosClient.get(`${ordersUrl}/admin?page=${page}&size=${size}`, {
+        const response = await axiosClient.get(apiUrl.orders(`admin?page=${page}&size=${size}`), {
             headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;
@@ -104,7 +104,7 @@ export const getAllOrders = async (token: string, page: number = 1, size: number
     }
 };
 
-// ADMIN: Update order status
+// ADMIN: Update order status (FIXED: use apiUrl.orders() correctly)
 export const updateOrderStatus = async (
     id: number,
     status: string,
@@ -117,7 +117,7 @@ export const updateOrderStatus = async (
         if (trackingNumber) payload.tracking_number = trackingNumber;
         if (notes) payload.notes = notes;
 
-        const response = await axiosClient.put(`${ordersUrl}/${id}`, payload, {
+        const response = await axiosClient.put(apiUrl.orders(`${id}`), payload, {
             headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;
@@ -127,10 +127,10 @@ export const updateOrderStatus = async (
     }
 };
 
-// ADMIN: Get order statistics
+// ADMIN: Get order statistics (FIXED: use apiUrl.orders() correctly)
 export const getOrderStats = async (token: string): Promise<any | null> => {
     try {
-        const response = await axiosClient.get(`${ordersUrl}/admin/stats`, {
+        const response = await axiosClient.get(apiUrl.orders('admin/stats'), {
             headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;

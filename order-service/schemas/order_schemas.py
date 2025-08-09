@@ -22,8 +22,24 @@ class ShippingAddress(AddressBase):
 class BillingAddress(AddressBase):
     pass
 
-# Order creation schema
+# UPDATED: Simplified Order Creation Schema
 class OrderCreate(BaseModel):
+    """Simplified order creation - most data comes from user profile and cart"""
+    # Optional override addresses (if not provided, use defaults)
+    shipping_address: Optional[ShippingAddress] = None
+    billing_address: Optional[BillingAddress] = None
+    
+    # Optional fields
+    customer_phone: Optional[str] = None
+    notes: Optional[str] = None
+    
+    # All other data comes automatically from:
+    # - customer_email: JWT token
+    # - items: current cart
+    # - customer info: user service
+
+# LEGACY: Keep old schema for backward compatibility
+class OrderCreateLegacy(BaseModel):
     shipping_address: ShippingAddress
     billing_address: Optional[BillingAddress] = None
     customer_email: EmailStr
