@@ -227,7 +227,7 @@ const ProductPage = () => {
     return 'good';
   };
 
-  const getStockColor = () => {
+  const getStockColor = (): 'error' | 'warning' | 'success' | 'default' => {
     const level = getStockLevel();
     switch (level) {
       case 'out': return 'error';
@@ -403,7 +403,7 @@ const ProductPage = () => {
                     {/* Stock Badge */}
                     <Chip
                       label={product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-                      color={getStockColor()}
+                      color={getStockColor() as any}
                       size="small"
                       sx={{
                         position: 'absolute',
@@ -511,7 +511,7 @@ const ProductPage = () => {
                   {/* Stock Status with Progress */}
                   <Paper sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <InventoryIcon color={getStockColor()} />
+                      <InventoryIcon color={getStockColor() as any} />
                       <Typography 
                         variant="body1" 
                         color={`${getStockColor()}.main`}
@@ -524,7 +524,7 @@ const ProductPage = () => {
                       <LinearProgress
                         variant="determinate"
                         value={calculateStockPercentage()}
-                        color={getStockColor()}
+                        color={getStockColor() as any}
                         sx={{ height: 6, borderRadius: 3 }}
                       />
                     )}
