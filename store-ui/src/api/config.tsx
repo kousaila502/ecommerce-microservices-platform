@@ -19,7 +19,7 @@ const buildUrl = (baseUrl: string, path: string): string => {
 
 // API URLs for all microservices - SECURE HTTPS ENDPOINTS
 const rawProductsUrl = process.env.REACT_APP_PRODUCTS_URL_BASE || 'https://ecommerce-product-service-56575270905a.herokuapp.com';
-const rawCartUrl = process.env.REACT_APP_CART_URL_BASE || 'https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com/cart';  // ✅ ADD /cart
+const rawCartUrl = process.env.REACT_APP_CART_URL_BASE || 'https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com';  // ✅ REMOVE /cart from here
 const rawSearchUrl = process.env.REACT_APP_SEARCH_URL_BASE || 'https://ecommerce-microservices-platform.onrender.com';
 const rawUsersUrl = process.env.REACT_APP_USERS_URL_BASE || 'https://34.95.5.30.nip.io/user';
 const rawOrdersUrl = process.env.REACT_APP_ORDERS_URL_BASE || 'https://34.95.5.30.nip.io/order';
@@ -38,7 +38,7 @@ export const apiUrl = {
   users: (path: string) => buildUrl(usersUrl, path),
   admin: (path: string) => buildUrl(adminUrl, path),
   orders: (path: string) => buildUrl(ordersUrl, path),
-  cart: (path: string) => buildUrl(cartUrl, path),
+  cart: (path: string) => buildUrl(cartUrl, `cart/${path}`),  // ✅ ADD cart/ prefix here
   products: (path: string) => buildUrl(productsUrl, path),
   search: (path: string) => buildUrl(searchUrl, path),
 };
