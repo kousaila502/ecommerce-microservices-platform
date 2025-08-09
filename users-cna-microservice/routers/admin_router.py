@@ -323,7 +323,7 @@ async def admin_create_user(
             email=new_user.email,
             mobile=new_user.mobile,
             role=new_user.role,
-            status=new_user.status.value,
+            status=new_user.status,  # Remove .value since status is already a string
             is_email_verified=new_user.is_email_verified,
             created_at=new_user.created_at.isoformat(),
             message=f"User {new_user.name} created successfully by admin {current_admin.name}"
