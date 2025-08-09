@@ -20,6 +20,8 @@ import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import OrdersPage from './pages/Orders/OrdersPage'
 import OrderDetails from './pages/Orders/OrderDetails'
+import Products from './pages/Products/Products'
+import DealsPage from './pages/Deals/DealsPage'
 
 const App = () => {
     return (
@@ -32,7 +34,7 @@ const App = () => {
                     <Route path="/search" element={<Layout><SearchResults /></Layout>} />
                     <Route path="/register" element={<Layout><Register /></Layout>} />
                     <Route path="/login" element={<Layout><Login /></Layout>} />
-                    
+
                     {/* Protected routes with main layout */}
                     <Route path="/cart" element={
                         <Layout>
@@ -64,7 +66,7 @@ const App = () => {
                             </ProtectedRoute>
                         </Layout>
                     } />
-                    
+
                     {/* Legacy admin route (redirect to new admin) */}
                     <Route path="/users" element={
                         <Layout>
@@ -73,7 +75,7 @@ const App = () => {
                             </ProtectedRoute>
                         </Layout>
                     } />
-                    
+
                     {/* New Admin routes with admin layout */}
                     <Route path="/admin/*" element={
                         <ProtectedRoute requireAdmin={true}>
@@ -88,6 +90,10 @@ const App = () => {
                             </AdminLayout>
                         </ProtectedRoute>
                     } />
+
+                    {/* Additional public routes */}
+                    <Route path="/products" element={<Layout><Products /></Layout>} />
+                    <Route path="/deals" element={<Layout><DealsPage /></Layout>} />
                 </Routes>
             </CartProvider>
         </AuthProvider>
