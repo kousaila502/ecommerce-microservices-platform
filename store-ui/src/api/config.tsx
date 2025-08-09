@@ -14,9 +14,9 @@ axiosClient.defaults.timeout = 10000;
 export const productsUrl = process.env.REACT_APP_PRODUCTS_URL_BASE || 'https://ecommerce-product-service-56575270905a.herokuapp.com/'
 export const cartUrl = process.env.REACT_APP_CART_URL_BASE || 'https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com/'
 export const searchUrl = process.env.REACT_APP_SEARCH_URL_BASE || 'https://ecommerce-microservices-platform.onrender.com/'
-export const usersUrl = process.env.REACT_APP_USERS_URL_BASE || 'http://34.118.167.199.nip.io/user/'
-export const ordersUrl = process.env.REACT_APP_ORDERS_URL_BASE || 'http://34.118.167.199.nip.io/order/'
-export const adminUrl = process.env.REACT_APP_ADMIN_URL_BASE || 'http://34.118.167.199.nip.io/admin/';
+export const usersUrl = process.env.REACT_APP_USERS_URL_BASE || 'http://34.95.5.30.nip.io/user/'
+export const ordersUrl = process.env.REACT_APP_ORDERS_URL_BASE || 'http://34.95.5.30.nip.io/order/'
+export const adminUrl = process.env.REACT_APP_ADMIN_URL_BASE || 'http://34.95.5.30.nip.io/admin/';
 
 // Add logging right after the export statements
 console.log('🔍 Environment Variables Check:');
