@@ -40,7 +40,7 @@ spec:
     - host: 34.95.5.30.nip.io
       http:
         paths:
-          # User Service Routes (regex, rewrite)
+          # User Service Routes (UNCHANGED - EXACTLY AS BEFORE)
           - path: /user(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
@@ -49,9 +49,9 @@ spec:
                 port:
                   number: 9090
 
-          # Order Service Routes (NO REWRITE, direct pass-through)
-          - path: /orders
-            pathType: Prefix
+          # ✅ FIXED: Order Service Routes (now uses regex like user)
+          - path: /orders(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: order-service
@@ -67,7 +67,7 @@ spec:
                 port:
                   number: 8081
 
-          # Health checks and other endpoints remain unchanged
+          # Everything else UNCHANGED
           - path: /health
             pathType: Exact
             backend:

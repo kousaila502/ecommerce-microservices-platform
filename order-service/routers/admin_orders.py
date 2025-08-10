@@ -10,7 +10,7 @@ from utils.auth import get_current_admin_user, User
 from services.order_service import OrderService
 from schemas.order_schemas import OrderResponse, OrderSummary, OrderUpdate, OrderStats
 
-router = APIRouter(prefix="/admin/orders", tags=["admin-orders"])
+router = APIRouter(tags=["admin-orders"])
 
 @router.get("/stats", response_model=OrderStats)
 async def get_order_statistics(

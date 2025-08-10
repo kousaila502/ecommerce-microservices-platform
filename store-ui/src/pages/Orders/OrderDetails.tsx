@@ -1,4 +1,4 @@
-// src/pages/Orders/OrderDetails.tsx (ENHANCED VERSION)
+// src/pages/Orders/OrderDetails.tsx (UPDATED FOR NEW MODEL)
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getOrderById, Order } from '../../api/order';
@@ -43,6 +43,7 @@ import {
   Email as EmailIcon,
   LocationOn as LocationIcon,
   Person as PersonIcon,
+  Phone as PhoneIcon,
 } from '@mui/icons-material';
 
 const OrderDetails = () => {
@@ -80,7 +81,7 @@ const OrderDetails = () => {
   }, [id, token]);
 
   const getStatusColor = (status: string): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'completed':
       case 'delivered':
         return 'success';
@@ -95,7 +96,7 @@ const OrderDetails = () => {
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'completed':
       case 'delivered':
         return <CompletedIcon color="success" />;
@@ -118,23 +119,40 @@ const OrderDetails = () => {
       { label: 'Delivered', status: 'delivered' },
     ];
 
-    const currentStepIndex = steps.findIndex(step => step.status === status.toLowerCase());
+    const currentStepIndex = steps.findIndex(step => step.status === status?.toLowerCase());
     return { steps, currentStepIndex };
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Invalid date';
+    }
   };
 
+  // ✅ FIXED: Add safety check for order_items
   const calculateSubtotal = () => {
-    if (!order) return 0;
-    return order.order_items.reduce((sum, item) => sum + parseFloat(item.total_price.toString()), 0);
+    if (!order?.order_items || !Array.isArray(order.order_items)) return 0;
+    return order.order_items.reduce((sum, item) => {
+      const price = typeof item.total_price === 'string' 
+        ? parseFloat(item.total_price) 
+        : item.total_price;
+      return sum + (isNaN(price) ? 0 : price);
+    }, 0);
+  };
+
+  // ✅ Helper function to safely parse amounts
+  const parseAmount = (amount: string | number | undefined): number => {
+    if (!amount) return 0;
+    const parsed = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return isNaN(parsed) ? 0 : parsed;
   };
 
   if (loading) {
@@ -177,7 +195,7 @@ const OrderDetails = () => {
   }
 
   const { steps, currentStepIndex } = getOrderSteps(order.status);
-  const subtotal = calculateSubtotal();
+  const subtotal = parseAmount(order.subtotal); // ✅ Use actual subtotal from API
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -227,7 +245,7 @@ const OrderDetails = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     {getStatusIcon(order.status)}
                     <Chip
-                      label={order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      label={order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
                       color={getStatusColor(order.status)}
                       sx={{ fontWeight: 'medium' }}
                     />
@@ -241,13 +259,31 @@ const OrderDetails = () => {
                     </Step>
                   ))}
                 </Stepper>
+
+                {/* ✅ ADD: Tracking Number if available */}
+                {order.tracking_number && (
+                  <Box sx={{ mt: 3, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
+                    <Typography variant="body2" color="info.dark">
+                      <strong>Tracking Number:</strong> {order.tracking_number}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* ✅ ADD: Notes if available */}
+                {order.notes && (
+                  <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Notes:</strong> {order.notes}
+                    </Typography>
+                  </Box>
+                )}
               </Paper>
 
               {/* Order Items */}
               <Paper sx={{ borderRadius: 2 }}>
                 <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
                   <Typography variant="h6" fontWeight="bold">
-                    Order Items ({order.order_items.length})
+                    Order Items ({order.order_items?.length || 0})
                   </Typography>
                 </Box>
                 <TableContainer>
@@ -261,23 +297,35 @@ const OrderDetails = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {order.order_items.map((item, idx) => (
-                        <TableRow key={idx} hover>
+                      {/* ✅ FIXED: Add safety check for order_items */}
+                      {order.order_items && Array.isArray(order.order_items) && order.order_items.map((item, idx) => (
+                        <TableRow key={item.id || idx} hover>
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <Avatar
-                                sx={{
-                                  mr: 2,
-                                  bgcolor: 'primary.light',
-                                  width: 48,
-                                  height: 48,
-                                }}
-                              >
-                                {item.product_name.substring(0, 2)}
-                              </Avatar>
+                              {/* ✅ UPDATED: Use product_image if available */}
+                              {item.product_image ? (
+                                <Avatar
+                                  src={item.product_image}
+                                  sx={{ mr: 2, width: 48, height: 48 }}
+                                />
+                              ) : (
+                                <Avatar
+                                  sx={{
+                                    mr: 2,
+                                    bgcolor: 'primary.light',
+                                    width: 48,
+                                    height: 48,
+                                  }}
+                                >
+                                  {item.product_name?.substring(0, 2) || 'PR'}
+                                </Avatar>
+                              )}
                               <Box>
                                 <Typography variant="body1" fontWeight="medium">
                                   {item.product_name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  SKU: {item.product_sku || 'N/A'}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
                                   Product ID: {item.product_id}
@@ -290,12 +338,12 @@ const OrderDetails = () => {
                           </TableCell>
                           <TableCell align="right">
                             <Typography variant="body1">
-                              ${parseFloat(item.unit_price.toString()).toFixed(2)}
+                              ${parseAmount(item.unit_price).toFixed(2)}
                             </Typography>
                           </TableCell>
                           <TableCell align="right">
                             <Typography variant="body1" fontWeight="medium">
-                              ${parseFloat(item.total_price.toString()).toFixed(2)}
+                              ${parseAmount(item.total_price).toFixed(2)}
                             </Typography>
                           </TableCell>
                         </TableRow>
@@ -319,17 +367,24 @@ const OrderDetails = () => {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography>Tax:</Typography>
-                  <Typography>${order.tax_amount ? parseFloat(order.tax_amount.toString()).toFixed(2) : '0.00'}</Typography>
+                  <Typography>${parseAmount(order.tax_amount).toFixed(2)}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography>Shipping:</Typography>
-                  <Typography>${order.shipping_amount ? parseFloat(order.shipping_amount.toString()).toFixed(2) : '0.00'}</Typography>
+                  <Typography>${parseAmount(order.shipping_amount).toFixed(2)}</Typography>
                 </Box>
+                {/* ✅ ADD: Discount if available */}
+                {parseAmount(order.discount_amount) > 0 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography color="success.main">Discount:</Typography>
+                    <Typography color="success.main">-${parseAmount(order.discount_amount).toFixed(2)}</Typography>
+                  </Box>
+                )}
                 <Divider sx={{ my: 2 }} />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="h6" fontWeight="bold">Total:</Typography>
                   <Typography variant="h6" fontWeight="bold" color="primary.main">
-                    ${order.total_amount}
+                    ${parseAmount(order.total_amount).toFixed(2)}
                   </Typography>
                 </Box>
               </Paper>
@@ -343,7 +398,7 @@ const OrderDetails = () => {
                   </Typography>
                 </Box>
                 <Chip
-                  label={order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}
+                  label={order.payment_status?.charAt(0).toUpperCase() + order.payment_status?.slice(1)}
                   color={order.payment_status === 'paid' ? 'success' : 'warning'}
                   sx={{ mb: 2 }}
                 />
@@ -364,13 +419,26 @@ const OrderDetails = () => {
                   {order.shipping_address}
                 </Typography>
                 <Typography variant="body1" gutterBottom>
-                  {order.shipping_city}
+                  {order.shipping_city}, {order.shipping_state} {order.shipping_postal_code}
                 </Typography>
+                <Typography variant="body1" gutterBottom>
+                  {order.shipping_country}
+                </Typography>
+                
+                {/* ✅ UPDATED: Customer contact info */}
                 {order.customer_email && (
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
                     <PersonIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />
                     <Typography variant="body2" color="text.secondary">
                       {order.customer_email}
+                    </Typography>
+                  </Box>
+                )}
+                {order.customer_phone && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                    <PhoneIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {order.customer_phone}
                     </Typography>
                   </Box>
                 )}
