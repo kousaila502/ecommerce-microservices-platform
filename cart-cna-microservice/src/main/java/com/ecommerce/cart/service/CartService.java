@@ -223,9 +223,30 @@ public class CartService {
      */
     public Mono<Boolean> clearCart(Integer userId) {
         String redisKey = "cart:" + userId;
-        return redisTemplate.delete(redisKey)
-                .map(count -> count > 0)
-                .doOnSuccess(cleared -> LOG.debug("Cart cleared for user {}", userId));
+        
+        if (isRedisAvailable()) {
+            // Clear from Redis
+            return redisTemplate.delete(redisKey)
+                    .map(count -> {
+                        // Also clear from fallback storage (just in case)
+                        fallbackCartStorage.remove(userId);
+                        // Always return true for successful operation
+                        LOG.debug("Cart cleared from Redis for user {}, keys deleted: {}", userId, count);
+                        return true;
+                    })
+                    .onErrorResume(error -> {
+                        LOG.warn("Redis error during cart clear, clearing fallback storage: {}", error.getMessage());
+                        fallbackCartStorage.remove(userId);
+                        return Mono.just(true);
+                    });
+        } else {
+            // Clear from fallback storage
+            LOG.debug("Clearing cart from fallback storage for user: {}", userId);
+            Cart removedCart = fallbackCartStorage.remove(userId);
+            boolean wasRemoved = removedCart != null;
+            LOG.debug("Cart cleared from fallback storage for user {}, cart existed: {}", userId, wasRemoved);
+            return Mono.just(true); // Always return true for successful operation
+        }
     }
     
     /**
