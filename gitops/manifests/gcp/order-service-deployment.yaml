@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: order-service-deployment
+  namespace: research-apps
   labels:
     app: order-service
     methodology: gitops
@@ -30,48 +31,70 @@ spec:
           image: kousaila/order-service:gitops-8002749
           imagePullPolicy: Always
           env:
+            # 🔧 CRITICAL FIX: Updated to correct database with SSL
             - name: DATABASE_URL
-              value: "postgresql+asyncpg://neondb_owner:npg_8kBPvMTquH2m@ep-cold-breeze-aedi5hre-pooler.c-2.us-east-2.aws.neon.tech/neondb"
+              value: "postgresql+asyncpg://neondb_owner:npg_X1tanrOKzW3g@ep-falling-thunder-aeahcn3d-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require"
+            
+            # ✅ Service URLs (Updated to HTTPS)
             - name: USER_SERVICE_URL
-              value: "https://34.95.5.30.nip.io/user" # ← UPDATED: Use external URL
+              value: "https://34.95.5.30.nip.io/user"
             - name: CART_SERVICE_URL
-              value: "https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com" # ← UPDATED: Live Heroku URL
+              value: "https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com"
             - name: PRODUCT_SERVICE_URL
-              value: "https://ecommerce-product-service-56575270905a.herokuapp.com" # ← UPDATED: Live Heroku URL
+              value: "https://ecommerce-product-service-56575270905a.herokuapp.com"
             - name: SEARCH_SERVICE_URL
-              value: "https://ecommerce-microservices-platform.onrender.com" # ← ADDED: Live Render URL
+              value: "https://ecommerce-microservices-platform.onrender.com"
+            
+            # ✅ Security Configuration (Matches User Service)
             - name: SECRET_KEY
-              value: "dyO5kHriKkZm_8tSzTxZOmKGd0iGhMLPusNi61pi5bU4MxJ12SZ2B0-iznJrLP-DTPsHDbao3_QduMo2TVpOCA" # ← UPDATED: Sync with other services
+              value: "dyO5kHriKkZm_8tSzTxZOmKGd0iGhMLPusNi61pi5bU4MxJ12SZ2B0-iznJrLP-DTPsHDbao3_QduMo2TVpOCA"
             - name: ALGORITHM
               value: HS256
             - name: ACCESS_TOKEN_EXPIRE_MINUTES
               value: "30"
+            
+            # ✅ CORS Configuration (Complete)
             - name: CORS_ORIGINS
-              value: "https://ecommerce-app-omega-two-64.vercel.app,https://ecommerce-microservices-platform.vercel.app,http://34.95.5.30.nip.io,https://34.95.5.30.nip.io,http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:50951,https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com,https://ecommerce-product-service-56575270905a.herokuapp.com,https://ecommerce-microservices-platform.onrender.com,http://techmart-controller.uksouth.azurecontainer.io:3000" # ← UPDATED: Added current frontend
-            - name: CORS_METHODS # ← ADDED: CORS methods
+              value: "https://ecommerce-app-omega-two-64.vercel.app,https://ecommerce-microservices-platform.vercel.app,http://34.95.5.30.nip.io,https://34.95.5.30.nip.io,http://localhost:3000,http://127.0.0.1:3000,http://127.0.0.1:50951,https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com,https://ecommerce-product-service-56575270905a.herokuapp.com,https://ecommerce-microservices-platform.onrender.com,http://techmart-controller.uksouth.azurecontainer.io:3000"
+            - name: CORS_METHODS
               value: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-            - name: CORS_HEADERS # ← ADDED: CORS headers
+            - name: CORS_HEADERS
               value: "Content-Type,Authorization,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers"
-            - name: CORS_CREDENTIALS # ← ADDED: CORS credentials
+            - name: CORS_CREDENTIALS
               value: "true"
-            # Added Redis configuration for caching
+            
+            # ✅ Redis Configuration
             - name: REDIS_URL
-              value: "redis://discrete-raccoon-6606.upstash.io:6379" # ← ADDED: Upstash Redis for caching
+              value: "redis://discrete-raccoon-6606.upstash.io:6379"
+            
+            # 🔧 NEW: Service Configuration
+            - name: SERVICE_NAME
+              value: "order-service"
+            - name: SERVICE_PORT
+              value: "8081"
+            - name: SERVICE_HOST
+              value: "0.0.0.0"
+            - name: ENVIRONMENT
+              value: "production"
+            - name: LOG_LEVEL
+              value: "INFO"
+              
           ports:
             - containerPort: 8081
           resources:
             requests:
-              memory: "256Mi" # ← UPDATED: Increased from 64Mi (FastAPI + auto-reload needs more)
-              cpu: "150m" # ← UPDATED: Increased from 50m
+              memory: "256Mi"
+              cpu: "150m"
             limits:
-              memory: "512Mi" # ← UPDATED: Increased from 128Mi (Fixes OOMKilled)
-              cpu: "300m" # ← UPDATED: Increased from 100m (FastAPI overhead)
+              memory: "512Mi"
+              cpu: "300m"
+          
           # Enhanced health checks for better reliability
           livenessProbe:
             httpGet:
               path: /health
               port: 8081
-            initialDelaySeconds: 45 # ← Longer delay for FastAPI startup
+            initialDelaySeconds: 45
             periodSeconds: 15
             timeoutSeconds: 10
             failureThreshold: 3
@@ -83,7 +106,6 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
-          # Added startup probe for FastAPI initialization
           startupProbe:
             httpGet:
               path: /health
@@ -91,12 +113,14 @@ spec:
             initialDelaySeconds: 20
             periodSeconds: 15
             timeoutSeconds: 10
-            failureThreshold: 40 # ← Higher threshold for FastAPI + auto-reload
+            failureThreshold: 40
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: order-service
+  namespace: research-apps
   labels:
     app: order-service
     methodology: gitops
