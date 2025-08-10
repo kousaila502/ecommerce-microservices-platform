@@ -195,7 +195,7 @@ public class UserValidationService {
                     result.put("status", "UP");
                     result.put("responseTime", responseTime + "ms");
                     result.put("message", "User Service connection successful");
-                    result.put("endpoint", "http://34.118.167.199.nip.io/user");
+                    result.put("endpoint", "https://34.95.5.30.nip.io/user");
                     result.put("timestamp", LocalDateTime.now());
                     
                     LOG.info("✅ User Service: Connected successfully ({}ms)", responseTime);
@@ -210,7 +210,7 @@ public class UserValidationService {
                     result.put("status", "DOWN");
                     result.put("responseTime", responseTime + "ms");
                     result.put("error", error.getMessage());
-                    result.put("endpoint", "http://34.118.167.199.nip.io/user");
+                    result.put("endpoint", "https://34.95.5.30.nip.io/user");
                     result.put("timestamp", LocalDateTime.now());
                     
                     LOG.error("❌ User Service: Connection failed - {}", error.getMessage());
