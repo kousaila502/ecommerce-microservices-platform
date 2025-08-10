@@ -60,16 +60,65 @@ class OrderService:
             return None
 
     async def clear_cart(self, user_id: int, token: str) -> bool:
-        """Clear user's cart after order creation"""
+        """Clear user's cart after order creation - WITH DETAILED LOGGING"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"🛒 CLEAR_CART: Starting cart clearing for user {user_id}")
+        logger.info(f"🔗 Cart Service URL: {settings.cart_service_url}")
+        logger.info(f"🎯 Target endpoint: {settings.cart_service_url}/cart")
+        logger.info(f"🔑 Using JWT token (first 20 chars): {token[:20]}...")
+        
         try:
             async with httpx.AsyncClient() as client:
+                logger.info(f"📡 Making DELETE request to Cart Service...")
+                
                 response = await client.delete(
                     f"{settings.cart_service_url}/cart",
                     headers={"Authorization": f"Bearer {token}"},
                     timeout=10.0
                 )
-                return response.status_code in [200, 404]
-        except Exception:
+                
+                logger.info(f"📨 Cart Service Response:")
+                logger.info(f"  Status Code: {response.status_code}")
+                logger.info(f"  Headers: {dict(response.headers)}")
+                
+                try:
+                    response_text = response.text
+                    logger.info(f"  Response Body: {response_text}")
+                except Exception as e:
+                    logger.warning(f"  Could not read response body: {e}")
+                
+                # Check if successful
+                is_success = response.status_code in [200, 404]
+                
+                if is_success:
+                    if response.status_code == 200:
+                        logger.info(f"✅ Cart cleared successfully (200 OK)")
+                    elif response.status_code == 404:
+                        logger.info(f"✅ Cart was already empty (404 Not Found)")
+                else:
+                    logger.error(f"❌ Cart clearing failed:")
+                    logger.error(f"  Status: {response.status_code}")
+                    logger.error(f"  Response: {response.text}")
+                    
+                    if response.status_code == 401:
+                        logger.error(f"  JWT Token rejected by Cart Service")
+                    elif response.status_code == 403:
+                        logger.error(f"  User {user_id} forbidden from clearing cart")
+                    elif response.status_code == 500:
+                        logger.error(f"  Cart Service internal error")
+                
+                return is_success
+                
+        except httpx.TimeoutException as e:
+            logger.error(f"❌ Cart Service timeout after 10 seconds: {e}")
+            return False
+        except httpx.ConnectError as e:
+            logger.error(f"❌ Could not connect to Cart Service: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Unexpected error clearing cart: {type(e).__name__}: {e}")
             return False
 
     async def update_product_stock(self, product_id: int, quantity: int, token: str) -> bool:
@@ -124,11 +173,23 @@ class OrderService:
         }
 
     async def create_order_simple(self, order_data: OrderCreate, user: User, token: str) -> Order:
-        """Create a new order from cart - SIMPLIFIED VERSION"""
-        # Get cart items
+        """Create a new order from cart - SIMPLIFIED VERSION WITH LOGGING"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"🚀 Starting order creation for user {user.id} ({user.email})")
+        
+        # Get cart items BEFORE order
+        logger.info(f"📋 Step 1: Fetching cart items for user {user.id}")
         cart_items = await self.get_cart_items(user.id, token)
         if not cart_items:
+            logger.error(f"❌ Cart is empty for user {user.id}")
             raise ValueError("Cart is empty - cannot create order")
+        
+        logger.info(f"✅ Found {len(cart_items)} items in cart:")
+        for i, item in enumerate(cart_items, 1):
+            product_id = item.get('productId') or item.get('product_id')
+            logger.info(f"  Item {i}: Product {product_id} - {item.get('title', 'Unknown')} x{item['quantity']} @ ${item['price']}")
 
         # Use default shipping address if not provided
         if order_data.shipping_address is None:
@@ -148,16 +209,29 @@ class OrderService:
                 "country": order_data.shipping_address.country
             }
 
-        # Validate products and get details
+        # Validate products and get details + STOCK INFO
+        logger.info(f"📦 Step 2: Validating products and checking stock levels")
         validated_items = []
+        stock_before = {}
+        
         for cart_item in cart_items:
             product_id = cart_item.get('productId') or cart_item.get('product_id')
             if not product_id:
+                logger.error(f"❌ Invalid cart item: missing product ID")
                 raise ValueError("Invalid cart item: missing product ID")
             
+            logger.info(f"🔍 Fetching product details for Product {product_id}")
             product = await self.get_product_details(product_id, token)
             if not product:
+                logger.error(f"❌ Product {product_id} not found or unavailable")
                 raise ValueError(f"Product {product_id} not found or unavailable")
+
+            # Log current stock level
+            current_stock = product.get('stock', 0)
+            stock_before[product_id] = current_stock
+            logger.info(f"📊 Product {product_id} current stock: {current_stock} units")
+            logger.info(f"📊 Order quantity: {cart_item['quantity']} units")
+            logger.info(f"📊 Stock after order will be: {current_stock - cart_item['quantity']} units")
 
             validated_item = {
                 'product_id': product_id,
@@ -172,9 +246,15 @@ class OrderService:
             validated_items.append(validated_item)
 
         # Calculate totals
+        logger.info(f"💰 Step 3: Calculating order totals")
         totals = self.calculate_order_totals(cart_items)
+        logger.info(f"💰 Subtotal: ${totals['subtotal']}")
+        logger.info(f"💰 Tax: ${totals['tax_amount']}")
+        logger.info(f"💰 Shipping: ${totals['shipping_amount']}")
+        logger.info(f"💰 Total: ${totals['total_amount']}")
 
         # Create order
+        logger.info(f"📝 Step 4: Creating order in database")
         order = Order(
             user_id=user.id,
             order_number=await self.generate_order_number(),
@@ -200,8 +280,10 @@ class OrderService:
         # Save order
         self.db.add(order)
         await self.db.flush()
+        logger.info(f"✅ Order created with ID: {order.id}, Order Number: {order.order_number}")
 
         # Create order items
+        logger.info(f"📦 Step 5: Creating order items")
         for item_data in validated_items:
             order_item = OrderItem(
                 order_id=order.id,
@@ -215,20 +297,90 @@ class OrderService:
                 product_attributes=item_data['product_attributes']
             )
             self.db.add(order_item)
+            logger.info(f"✅ Added order item: {item_data['product_name']} x{item_data['quantity']}")
 
         # Update product stock
+        logger.info(f"📦 Step 6: Updating product stock levels")
+        stock_update_results = {}
         for item_data in validated_items:
-            await self.update_product_stock(
-                item_data['product_id'], 
-                item_data['quantity'], 
-                token
-            )
+            product_id = item_data['product_id']
+            quantity = item_data['quantity']
+            
+            logger.info(f"🔄 Updating stock for Product {product_id}: reducing by {quantity} units")
+            stock_success = await self.update_product_stock(product_id, quantity, token)
+            stock_update_results[product_id] = stock_success
+            
+            if stock_success:
+                logger.info(f"✅ Successfully updated stock for Product {product_id}")
+            else:
+                logger.error(f"❌ Failed to update stock for Product {product_id}")
 
         # Commit to database
+        logger.info(f"💾 Step 7: Committing order to database")
         await self.db.commit()
+        logger.info(f"✅ Order committed to database")
 
         # Clear cart
-        await self.clear_cart(user.id, token)
+        logger.info(f"🛒 Step 8: Clearing user cart")
+        logger.info(f"🔄 Attempting to clear cart for user {user.id}")
+        logger.info(f"🔗 Cart Service URL: {settings.cart_service_url}")
+        logger.info(f"🔑 Token length: {len(token)} characters")
+        
+        cart_clear_success = await self.clear_cart(user.id, token)
+        
+        if cart_clear_success:
+            logger.info(f"✅ Successfully cleared cart for user {user.id}")
+        else:
+            logger.error(f"❌ Failed to clear cart for user {user.id}")
+            logger.error(f"❌ Check Cart Service logs for detailed error information")
+
+        # Verify cart is actually cleared
+        logger.info(f"🔍 Step 9: Verifying cart was cleared")
+        cart_items_after = await self.get_cart_items(user.id, token)
+        logger.info(f"📋 Cart items after clearing: {len(cart_items_after)} items")
+        if cart_items_after:
+            logger.warning(f"⚠️  Cart still contains items after clearing attempt:")
+            for i, item in enumerate(cart_items_after, 1):
+                product_id = item.get('productId') or item.get('product_id')
+                logger.warning(f"  Remaining item {i}: Product {product_id} - {item.get('title', 'Unknown')} x{item['quantity']}")
+        else:
+            logger.info(f"✅ Cart successfully cleared - no items remaining")
+
+        # Verify stock updates
+        logger.info(f"🔍 Step 10: Verifying stock updates")
+        for item_data in validated_items:
+            product_id = item_data['product_id']
+            quantity_ordered = item_data['quantity']
+            
+            logger.info(f"🔄 Verifying stock update for Product {product_id}")
+            updated_product = await self.get_product_details(product_id, token)
+            if updated_product:
+                new_stock = updated_product.get('stock', 0)
+                old_stock = stock_before.get(product_id, 0)
+                expected_stock = old_stock - quantity_ordered
+                
+                logger.info(f"📊 Product {product_id} stock verification:")
+                logger.info(f"  Before order: {old_stock} units")
+                logger.info(f"  Ordered: {quantity_ordered} units")
+                logger.info(f"  Expected after: {expected_stock} units")
+                logger.info(f"  Actual after: {new_stock} units")
+                
+                if new_stock == expected_stock:
+                    logger.info(f"✅ Stock correctly updated for Product {product_id}")
+                else:
+                    logger.error(f"❌ Stock mismatch for Product {product_id}! Expected {expected_stock}, got {new_stock}")
+            else:
+                logger.error(f"❌ Could not verify stock for Product {product_id} - product not found")
+
+        # Final summary
+        logger.info(f"🎉 ORDER CREATION SUMMARY:")
+        logger.info(f"  Order ID: {order.id}")
+        logger.info(f"  Order Number: {order.order_number}")
+        logger.info(f"  User: {user.email}")
+        logger.info(f"  Items: {len(validated_items)}")
+        logger.info(f"  Total: ${totals['total_amount']}")
+        logger.info(f"  Cart Clear: {'✅ Success' if cart_clear_success else '❌ Failed'}")
+        logger.info(f"  Stock Updates: {sum(1 for success in stock_update_results.values() if success)}/{len(stock_update_results)} successful")
 
         # Reload order with items
         result = await self.db.execute(
