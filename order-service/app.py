@@ -86,7 +86,7 @@ async def root():
     """Root endpoint"""
     return {
         "message": "Order Service API", 
-        "version": "2.1.0",
+        "version": "2.2.0",
         "endpoints": {
             "orders": "/orders",
             "admin": "/admin/orders",

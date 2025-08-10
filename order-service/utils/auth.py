@@ -31,7 +31,7 @@ async def verify_token(token: str) -> Optional[dict]:
 async def get_user_from_service(user_id: int) -> Optional[User]:
     """Get user details from user service"""
     try:
-        url = f"https://34.95.5.30.nip.io/user/users/{user_id}"
+        url = f"https://34.95.5.30.nip.io/user/{user_id}"
         async with httpx.AsyncClient() as client:
             response = await client.get(url, timeout=10.0)
             
@@ -80,4 +80,14 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     if not user:
         user = await create_user_from_token(payload)
     
+    return user
+
+async def get_current_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
+    """Get current admin user from JWT token"""
+    user = await get_current_user(credentials)
+    if not user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required"
+        )
     return user
