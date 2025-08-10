@@ -33,8 +33,7 @@ spec:
           env:
             # 🔧 CRITICAL FIX: Updated to correct database with SSL
             - name: DATABASE_URL
-              value: "postgresql+asyncpg://neondb_owner:npg_X1tanrOKzW3g@ep-falling-thunder-aeahcn3d-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require"
-            
+              value: "postgresql+asyncpg://neondb_owner:npg_X1tanrOKzW3g@ep-falling-thunder-aeahcn3d-pooler.c-2.us-east-2.aws.neon.tech/neondb"            
             # ✅ Service URLs (Updated to HTTPS)
             - name: USER_SERVICE_URL
               value: "https://34.95.5.30.nip.io/user"
