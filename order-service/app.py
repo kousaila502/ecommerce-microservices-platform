@@ -41,7 +41,7 @@ This Order Service integrates with a multi-cloud microservices ecosystem:
     version="2.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/order/openapi.json"
 )
 
 # Enhanced CORS middleware with comprehensive configuration
