@@ -24,6 +24,7 @@ const rawSearchUrl = process.env.REACT_APP_SEARCH_URL_BASE || 'https://ecommerce
 const rawUsersUrl = process.env.REACT_APP_USERS_URL_BASE || 'https://34.95.5.30.nip.io/user';
 const rawOrdersUrl = process.env.REACT_APP_ORDERS_URL_BASE || 'https://34.95.5.30.nip.io/orders';  // ← ADD 's' to orders
 const rawAdminUrl = process.env.REACT_APP_ADMIN_URL_BASE || 'https://34.95.5.30.nip.io/user/admin';
+const rawOrdersAdminUrl = process.env.REACT_APP_ADMIN_URL_BASE || 'https://34.95.5.30.nip.io/orders/admin';
 
 // 🚀 Exported Clean URLs (no trailing slashes)
 export const productsUrl = rawProductsUrl.replace(/\/+$/, '');
@@ -32,6 +33,7 @@ export const searchUrl = rawSearchUrl.replace(/\/+$/, '');
 export const usersUrl = rawUsersUrl.replace(/\/+$/, '');
 export const ordersUrl = rawOrdersUrl.replace(/\/+$/, '');
 export const adminUrl = rawAdminUrl.replace(/\/+$/, '');
+export const ordersAdminUrl = rawOrdersAdminUrl.replace(/\/+$/, '');
 
 // 🛠️ URL Builder Helper (Export this for consistent usage)
 export const apiUrl = {
@@ -41,6 +43,7 @@ export const apiUrl = {
   cart: (path: string) => buildUrl(cartUrl, `cart/${path}`),  // ✅ ADD cart/ prefix here
   products: (path: string) => buildUrl(productsUrl, path),
   search: (path: string) => buildUrl(searchUrl, path),
+  ordersAdmin: (path: string) => buildUrl(ordersAdminUrl, path),
 };
 
 // Add logging right after the export statements

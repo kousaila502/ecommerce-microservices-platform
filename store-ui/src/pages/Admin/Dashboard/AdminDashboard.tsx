@@ -1,4 +1,4 @@
-// src/pages/Admin/Dashboard/AdminDashboard.tsx (UPDATED WITH CLICKABLE ORDERS)
+// src/pages/Admin/Dashboard/AdminDashboard.tsx (FIXED FOR CORRECT ORDER STATS)
 import React, { useState, useEffect } from 'react';
 import {
   Grid, Card, CardContent, Typography, Box, LinearProgress,
@@ -15,12 +15,14 @@ import {
   ShoppingCart as ShoppingCartIcon,
   DoneAll as DoneAllIcon,
   HourglassBottom as HourglassBottomIcon,
-  AttachMoney as AttachMoneyIcon
+  AttachMoney as AttachMoneyIcon,
+  LocalShipping as LocalShippingIcon,
+  Receipt as ReceiptIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getOrderStats } from '../../../api/order';
-import { apiUrl } from '../../../api/config';
+import { apiUrl, ordersAdminUrl, ordersUrl } from '../../../api/config';
 
 interface UserStats {
   total_users: number;
@@ -31,11 +33,18 @@ interface UserStats {
   users_today: number;
 }
 
+// ✅ FIXED: Updated interface to match actual API response
 interface OrderStats {
   total_orders: number;
-  completed_orders: number;
   pending_orders: number;
-  revenue: number;
+  confirmed_orders: number;
+  processing_orders: number;
+  shipped_orders: number;
+  delivered_orders: number;
+  cancelled_orders: number;
+  total_revenue: string; // API returns as string
+  orders_today: number;
+  orders_this_month: number;
 }
 
 interface User {
@@ -68,32 +77,52 @@ const AdminDashboard: React.FC = () => {
       setLoading(true);
 
       // Fetch user statistics
-      const statsResponse = await fetch(apiUrl.admin('stats'), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      try {
+        const statsResponse = await fetch(apiUrl.admin('stats'), {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
 
-      if (!statsResponse.ok) throw new Error('Failed to fetch user statistics');
-      setStats(await statsResponse.json());
+        if (statsResponse.ok) {
+          setStats(await statsResponse.json());
+        } else {
+          console.warn('User stats not available');
+        }
+      } catch (err) {
+        console.warn('Failed to fetch user stats:', err);
+      }
 
       // Fetch recent users
-      const usersResponse = await fetch(apiUrl.admin('users'), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      try {
+        const usersResponse = await fetch(apiUrl.admin('users'), {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
 
-      if (!usersResponse.ok) throw new Error('Failed to fetch users');
-      const usersData = await usersResponse.json();
-      const sortedUsers = usersData
-        .sort((a: User, b: User) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 5);
-      setRecentUsers(sortedUsers);
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json();
+          const sortedUsers = usersData
+            .sort((a: User, b: User) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 5);
+          setRecentUsers(sortedUsers);
+        } else {
+          console.warn('Recent users not available');
+        }
+      } catch (err) {
+        console.warn('Failed to fetch recent users:', err);
+      }
 
-      // Fetch order statistics
-      const orderData = await getOrderStats(token);
-      setOrderStats(orderData);
+      // ✅ FIXED: Fetch order statistics using correct API
+      try {
+        const orderData = await getOrderStats(token);
+        console.log('Order stats received:', orderData);
+        setOrderStats(orderData);
+      } catch (err) {
+        console.error('Failed to fetch order stats:', err);
+      }
+
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Dashboard data fetch failed');
@@ -121,15 +150,20 @@ const AdminDashboard: React.FC = () => {
     });
   };
 
-  // Handle card clicks
+  // ✅ FIXED: Updated to match actual order statuses
   const handleOrderCardClick = (filterType: string) => {
-    // Navigate to order management page with filter
     navigate('/admin/orders', { state: { filter: filterType } });
   };
 
   const handleUserCardClick = (filterType: string) => {
-    // Navigate to user management page with filter
     navigate('/admin/users', { state: { filter: filterType } });
+  };
+
+  // ✅ Helper function to parse revenue
+  const formatRevenue = (revenue: string | undefined): string => {
+    if (!revenue) return '0.00';
+    const numRevenue = parseFloat(revenue);
+    return isNaN(numRevenue) ? '0.00' : numRevenue.toFixed(2);
   };
 
   if (loading) {
@@ -146,6 +180,9 @@ const AdminDashboard: React.FC = () => {
       <Box>
         <Typography variant="h4" gutterBottom>Admin Dashboard</Typography>
         <Alert severity="error">{error}</Alert>
+        <Button variant="outlined" onClick={fetchDashboardData} sx={{ mt: 2 }}>
+          Retry
+        </Button>
       </Box>
     );
   }
@@ -158,106 +195,110 @@ const AdminDashboard: React.FC = () => {
       </Typography>
 
       {/* USER STATS */}
-      <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>User Statistics</Typography>
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
-            <CardActionArea onClick={() => handleUserCardClick('all')}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography color="text.secondary">Total Users</Typography>
-                    <Typography variant="h4">{stats?.total_users || 0}</Typography>
-                  </Box>
-                  <Avatar sx={{ bgcolor: 'primary.main' }}><PeopleIcon /></Avatar>
-                </Box>
-              </CardContent>
-            </CardActionArea>
-          </Card>
-        </Grid>
+      {stats && (
+        <>
+          <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>User Statistics</Typography>
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6} md={4}>
+              <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+                <CardActionArea onClick={() => handleUserCardClick('all')}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Box>
+                        <Typography color="text.secondary">Total Users</Typography>
+                        <Typography variant="h4">{stats.total_users || 0}</Typography>
+                      </Box>
+                      <Avatar sx={{ bgcolor: 'primary.main' }}><PeopleIcon /></Avatar>
+                    </Box>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
 
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
-            <CardActionArea onClick={() => handleUserCardClick('active')}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography color="text.secondary">Active Users</Typography>
-                    <Typography variant="h4">{stats?.active_users || 0}</Typography>
-                  </Box>
-                  <Avatar sx={{ bgcolor: 'success.main' }}><CheckCircleIcon /></Avatar>
-                </Box>
-              </CardContent>
-            </CardActionArea>
-          </Card>
-        </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+                <CardActionArea onClick={() => handleUserCardClick('active')}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Box>
+                        <Typography color="text.secondary">Active Users</Typography>
+                        <Typography variant="h4">{stats.active_users || 0}</Typography>
+                      </Box>
+                      <Avatar sx={{ bgcolor: 'success.main' }}><CheckCircleIcon /></Avatar>
+                    </Box>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
 
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
-            <CardActionArea onClick={() => handleUserCardClick('today')}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography color="text.secondary">New Today</Typography>
-                    <Typography variant="h4">{stats?.users_today || 0}</Typography>
-                  </Box>
-                  <Avatar sx={{ bgcolor: 'info.main' }}><PersonAddIcon /></Avatar>
-                </Box>
-              </CardContent>
-            </CardActionArea>
-          </Card>
-        </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+                <CardActionArea onClick={() => handleUserCardClick('today')}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Box>
+                        <Typography color="text.secondary">New Today</Typography>
+                        <Typography variant="h4">{stats.users_today || 0}</Typography>
+                      </Box>
+                      <Avatar sx={{ bgcolor: 'info.main' }}><PersonAddIcon /></Avatar>
+                    </Box>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
 
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
-            <CardActionArea onClick={() => handleUserCardClick('blocked')}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography color="text.secondary">Blocked Users</Typography>
-                    <Typography variant="h4">{stats?.blocked_users || 0}</Typography>
-                  </Box>
-                  <Avatar sx={{ bgcolor: 'error.main' }}><BlockIcon /></Avatar>
-                </Box>
-              </CardContent>
-            </CardActionArea>
-          </Card>
-        </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+                <CardActionArea onClick={() => handleUserCardClick('blocked')}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Box>
+                        <Typography color="text.secondary">Blocked Users</Typography>
+                        <Typography variant="h4">{stats.blocked_users || 0}</Typography>
+                      </Box>
+                      <Avatar sx={{ bgcolor: 'error.main' }}><BlockIcon /></Avatar>
+                    </Box>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
 
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
-            <CardActionArea onClick={() => handleUserCardClick('suspended')}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography color="text.secondary">Suspended</Typography>
-                    <Typography variant="h4">{stats?.suspended_users || 0}</Typography>
-                  </Box>
-                  <Avatar sx={{ bgcolor: 'warning.main' }}><WarningIcon /></Avatar>
-                </Box>
-              </CardContent>
-            </CardActionArea>
-          </Card>
-        </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+                <CardActionArea onClick={() => handleUserCardClick('suspended')}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Box>
+                        <Typography color="text.secondary">Suspended</Typography>
+                        <Typography variant="h4">{stats.suspended_users || 0}</Typography>
+                      </Box>
+                      <Avatar sx={{ bgcolor: 'warning.main' }}><WarningIcon /></Avatar>
+                    </Box>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Grid>
 
-        <Grid item xs={12} sm={6} md={4}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography color="text.secondary">Activity Rate</Typography>
-                  <Typography variant="h4">
-                    {stats && stats.total_users > 0
-                      ? `${Math.round((stats.active_users / stats.total_users) * 100)}%`
-                      : '0%'}
-                  </Typography>
-                </Box>
-                <Avatar sx={{ bgcolor: 'secondary.main' }}><TrendingUpIcon /></Avatar>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography color="text.secondary">Activity Rate</Typography>
+                      <Typography variant="h4">
+                        {stats.total_users > 0
+                          ? `${Math.round((stats.active_users / stats.total_users) * 100)}%`
+                          : '0%'}
+                      </Typography>
+                    </Box>
+                    <Avatar sx={{ bgcolor: 'secondary.main' }}><TrendingUpIcon /></Avatar>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </>
+      )}
 
       {/* ORDER STATS */}
       <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>Order Statistics</Typography>
@@ -270,6 +311,9 @@ const AdminDashboard: React.FC = () => {
                   <Box>
                     <Typography color="text.secondary">Total Orders</Typography>
                     <Typography variant="h4">{orderStats?.total_orders || 0}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {orderStats?.orders_this_month || 0} this month
+                    </Typography>
                   </Box>
                   <Avatar sx={{ bgcolor: 'primary.main' }}><ShoppingCartIcon /></Avatar>
                 </Box>
@@ -280,12 +324,54 @@ const AdminDashboard: React.FC = () => {
 
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
-            <CardActionArea onClick={() => handleOrderCardClick('completed')}>
+            <CardActionArea onClick={() => handleOrderCardClick('pending')}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography color="text.secondary">Completed</Typography>
-                    <Typography variant="h4">{orderStats?.completed_orders || 0}</Typography>
+                    <Typography color="text.secondary">Pending Orders</Typography>
+                    <Typography variant="h4" color="warning.main">
+                      {orderStats?.pending_orders || 0}
+                    </Typography>
+                    {orderStats?.pending_orders && orderStats.pending_orders > 0 && (
+                      <Chip
+                        label="Action Required"
+                        size="small"
+                        color="warning"
+                        sx={{ mt: 0.5, fontSize: '0.7rem' }}
+                      />
+                    )}
+                  </Box>
+                  <Avatar sx={{ bgcolor: 'warning.main' }}><HourglassBottomIcon /></Avatar>
+                </Box>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+            <CardActionArea onClick={() => handleOrderCardClick('confirmed')}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography color="text.secondary">Confirmed</Typography>
+                    <Typography variant="h4">{orderStats?.confirmed_orders || 0}</Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: 'info.main' }}><ReceiptIcon /></Avatar>
+                </Box>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+            <CardActionArea onClick={() => handleOrderCardClick('delivered')}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography color="text.secondary">Delivered</Typography>
+                    <Typography variant="h4">{orderStats?.delivered_orders || 0}</Typography>
                   </Box>
                   <Avatar sx={{ bgcolor: 'success.main' }}><DoneAllIcon /></Avatar>
                 </Box>
@@ -295,38 +381,32 @@ const AdminDashboard: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{
-            transition: 'transform 0.2s',
-            '&:hover': { transform: 'translateY(-4px)' },
-            border: orderStats?.pending_orders ? 2 : 0,
-            borderColor: 'warning.main'
-          }}>
-            <CardActionArea onClick={() => handleOrderCardClick('pending')}>
+          <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+            <CardActionArea onClick={() => handleOrderCardClick('processing')}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Box>
-                    <Typography color="text.secondary">
-                      Pending Orders
-                      {orderStats?.pending_orders && orderStats.pending_orders > 0 && (
-                        <Chip
-                          label="Action Required"
-                          size="small"
-                          color="warning"
-                          sx={{ ml: 1, fontSize: '0.6rem' }}
-                        />
-                      )}
-                    </Typography>
-                    <Typography variant="h4" color="warning.main">
-                      {orderStats?.pending_orders || 0}
-                    </Typography>
+                    <Typography color="text.secondary">Processing</Typography>
+                    <Typography variant="h4">{orderStats?.processing_orders || 0}</Typography>
                   </Box>
-                  <Avatar sx={{ bgcolor: 'warning.main' }}><HourglassBottomIcon /></Avatar>
+                  <Avatar sx={{ bgcolor: 'info.main' }}><LocalShippingIcon /></Avatar>
                 </Box>
-                {orderStats?.pending_orders && orderStats.pending_orders > 0 && (
-                  <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
-                    Click to manage pending orders
-                  </Typography>
-                )}
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+            <CardActionArea onClick={() => handleOrderCardClick('shipped')}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography color="text.secondary">Shipped</Typography>
+                    <Typography variant="h4">{orderStats?.shipped_orders || 0}</Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: 'secondary.main' }}><LocalShippingIcon /></Avatar>
+                </Box>
               </CardContent>
             </CardActionArea>
           </Card>
@@ -338,11 +418,32 @@ const AdminDashboard: React.FC = () => {
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography color="text.secondary">Total Revenue</Typography>
-                  <Typography variant="h4">${orderStats?.revenue?.toFixed(2) || '0.00'}</Typography>
+                  <Typography variant="h4">${formatRevenue(orderStats?.total_revenue)}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {orderStats?.orders_today || 0} orders today
+                  </Typography>
                 </Box>
-                <Avatar sx={{ bgcolor: 'info.main' }}><AttachMoneyIcon /></Avatar>
+                <Avatar sx={{ bgcolor: 'success.main' }}><AttachMoneyIcon /></Avatar>
               </Box>
             </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+            <CardActionArea onClick={() => handleOrderCardClick('cancelled')}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography color="text.secondary">Cancelled</Typography>
+                    <Typography variant="h4" color="error.main">
+                      {orderStats?.cancelled_orders || 0}
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: 'error.main' }}><BlockIcon /></Avatar>
+                </Box>
+              </CardContent>
+            </CardActionArea>
           </Card>
         </Grid>
       </Grid>
@@ -353,37 +454,43 @@ const AdminDashboard: React.FC = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>Recent Users</Typography>
-              <List>
-                {recentUsers.map((user, index) => (
-                  <React.Fragment key={user.id}>
-                    <ListItem>
-                      <ListItemAvatar>
-                        <Avatar sx={{ bgcolor: getStatusColor(user.status) === 'success' ? 'success.main' : 'warning.main' }}>
-                          {user.name.charAt(0).toUpperCase()}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={user.name}
-                        secondary={
-                          <Box>
-                            <Typography variant="body2">{user.email}</Typography>
-                            <Chip
-                              label={user.status}
-                              size="small"
-                              color={getStatusColor(user.status)}
-                              sx={{ mt: 0.5 }}
-                            />
-                          </Box>
-                        }
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        {formatDate(user.created_at)}
-                      </Typography>
-                    </ListItem>
-                    {index < recentUsers.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
+              {recentUsers.length > 0 ? (
+                <List>
+                  {recentUsers.map((user, index) => (
+                    <React.Fragment key={user.id}>
+                      <ListItem>
+                        <ListItemAvatar>
+                          <Avatar sx={{ bgcolor: getStatusColor(user.status) === 'success' ? 'success.main' : 'warning.main' }}>
+                            {user.name.charAt(0).toUpperCase()}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={user.name}
+                          secondary={
+                            <Box>
+                              <Typography variant="body2">{user.email}</Typography>
+                              <Chip
+                                label={user.status}
+                                size="small"
+                                color={getStatusColor(user.status)}
+                                sx={{ mt: 0.5 }}
+                              />
+                            </Box>
+                          }
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          {formatDate(user.created_at)}
+                        </Typography>
+                      </ListItem>
+                      {index < recentUsers.length - 1 && <Divider />}
+                    </React.Fragment>
+                  ))}
+                </List>
+              ) : (
+                <Typography color="text.secondary" sx={{ py: 2 }}>
+                  No recent users available
+                </Typography>
+              )}
               <Button
                 fullWidth
                 variant="outlined"
@@ -408,7 +515,7 @@ const AdminDashboard: React.FC = () => {
                     onClick={() => navigate('/admin/orders')}
                     startIcon={<ShoppingCartIcon />}
                   >
-                    Manage Orders
+                    Manage Orders ({orderStats?.total_orders || 0})
                   </Button>
                 </Grid>
                 <Grid item xs={12}>
@@ -418,7 +525,18 @@ const AdminDashboard: React.FC = () => {
                     onClick={() => navigate('/admin/users')}
                     startIcon={<PeopleIcon />}
                   >
-                    Manage Users
+                    Manage Users ({stats?.total_users || 0})
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={() => handleOrderCardClick('pending')}
+                    startIcon={<HourglassBottomIcon />}
+                    color={orderStats?.pending_orders && orderStats.pending_orders > 0 ? 'warning' : 'inherit'}
+                  >
+                    Pending Orders ({orderStats?.pending_orders || 0})
                   </Button>
                 </Grid>
                 <Grid item xs={12}>
@@ -429,16 +547,6 @@ const AdminDashboard: React.FC = () => {
                     startIcon={<TrendingUpIcon />}
                   >
                     View Analytics
-                  </Button>
-                </Grid>
-                <Grid item xs={12}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    onClick={() => navigate('/admin/settings')}
-                    startIcon={<WarningIcon />}
-                  >
-                    Settings
                   </Button>
                 </Grid>
               </Grid>

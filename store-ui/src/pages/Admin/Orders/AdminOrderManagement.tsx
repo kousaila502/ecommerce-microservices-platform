@@ -87,7 +87,7 @@ const AdminOrderManagement: React.FC = () => {
     setLoading(true);
     try {
       // TODO: Replace with your actual API call
-      const response = await fetch(`${ordersUrl}/admin/orders`, {
+      const response = await fetch(`${ordersUrl}/admin/orders/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -145,7 +145,7 @@ const AdminOrderManagement: React.FC = () => {
 
     try {
       // TODO: Replace with your actual API call
-      const response = await fetch(`${ordersUrl}/${orderId}`, {
+      const response = await fetch(`${ordersUrl}/orders/${orderId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

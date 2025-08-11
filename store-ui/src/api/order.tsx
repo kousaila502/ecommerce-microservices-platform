@@ -216,7 +216,7 @@ export const updateOrderStatus = async (
 // ✅ ADMIN: Get order statistics
 export const getOrderStats = async (token: string): Promise<any | null> => {
     try {
-        const response = await axiosClient.get(apiUrl.orders('orders/admin/stats/'), {
+        const response = await axiosClient.get(apiUrl.orders('/admin/orders/stats'), {
             headers: { Authorization: `Bearer ${token}` },
         });
         console.log('Order stats response:', response.data);
