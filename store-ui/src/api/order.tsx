@@ -1,4 +1,4 @@
-import axiosClient, { apiUrl } from "./config"
+import axiosClient, { apiUrl, rawOrdersUrl, rawOrdersAdminUrl  } from "./config"
 
 // ✅ ADDED: Enums to match backend exactly
 export enum OrderStatus {
@@ -118,7 +118,7 @@ export const createOrder = async (
     token: string
 ): Promise<Order | null> => {
     try {
-        const response = await axiosClient.post(apiUrl.orders('orders/'), payload, {
+        const response = await axiosClient.post(`${rawOrdersUrl}/`, payload, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -135,7 +135,7 @@ export const createOrder = async (
 export const getUserOrders = async (token: string, page: number = 1, size: number = 10): Promise<Order[] | null> => {
     try {
         // ✅ FIXED: Add 'orders/' with trailing slash for query params
-        const response = await axiosClient.get(apiUrl.orders(`orders/?page=${page}&size=${size}`), {
+        const response = await axiosClient.get(`${rawOrdersUrl}/?page=${page}&size=${size}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -157,7 +157,7 @@ export const getUserOrders = async (token: string, page: number = 1, size: numbe
 export const getOrderById = async (id: number, token: string): Promise<Order | null> => {
     try {
         // ✅ FIXED: Use the working endpoint pattern (without trailing slash works)
-        const response = await axiosClient.get(apiUrl.orders(`orders/${id}`), {
+        const response = await axiosClient.get(`${rawOrdersUrl}/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         console.log('Order by ID response:', response.data);
@@ -171,7 +171,7 @@ export const getOrderById = async (id: number, token: string): Promise<Order | n
 // ✅ ADMIN: Get all orders
 export const getAllOrders = async (token: string, page: number = 1, size: number = 20): Promise<Order[] | null> => {
     try {
-        const response = await axiosClient.get(apiUrl.orders(`orders/admin/?page=${page}&size=${size}`), {
+        const response = await axiosClient.get(`${rawOrdersAdminUrl}/?page=${page}&size=${size}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         
@@ -202,7 +202,7 @@ export const updateOrderStatus = async (
         if (trackingNumber) payload.tracking_number = trackingNumber;
         if (notes) payload.notes = notes;
 
-        const response = await axiosClient.put(apiUrl.orders(`orders/${id}/`), payload, {
+        const response = await axiosClient.put(`${rawOrdersAdminUrl}/${id}/`, payload, {
             headers: { Authorization: `Bearer ${token}` },
         });
         console.log('Update order status response:', response.data);
@@ -216,7 +216,7 @@ export const updateOrderStatus = async (
 // ✅ ADMIN: Get order statistics
 export const getOrderStats = async (token: string): Promise<any | null> => {
     try {
-        const response = await axiosClient.get(apiUrl.orders('/admin/orders/stats'), {
+        const response = await axiosClient.get(`${rawOrdersAdminUrl}/stats`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         console.log('Order stats response:', response.data);

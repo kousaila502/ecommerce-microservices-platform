@@ -22,28 +22,24 @@ const rawProductsUrl = process.env.REACT_APP_PRODUCTS_URL_BASE || 'https://ecomm
 const rawCartUrl = process.env.REACT_APP_CART_URL_BASE || 'https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com';  // ✅ REMOVE /cart from here
 const rawSearchUrl = process.env.REACT_APP_SEARCH_URL_BASE || 'https://ecommerce-microservices-platform.onrender.com';
 const rawUsersUrl = process.env.REACT_APP_USERS_URL_BASE || 'https://34.95.5.30.nip.io/user';
-const rawOrdersUrl = process.env.REACT_APP_ORDERS_URL_BASE || 'https://34.95.5.30.nip.io/orders';  // ← ADD 's' to orders
+export const rawOrdersUrl = process.env.REACT_APP_ORDERS_URL_BASE || 'https://34.95.5.30.nip.io/orders';  // ← ADD 's' to orders
 const rawAdminUrl = process.env.REACT_APP_ADMIN_URL_BASE || 'https://34.95.5.30.nip.io/user/admin';
-const rawOrdersAdminUrl = process.env.REACT_APP_ADMIN_URL_BASE || 'https://34.95.5.30.nip.io/orders/admin';
+export const rawOrdersAdminUrl = 'https://34.95.5.30.nip.io/admin/orders';
 
 // 🚀 Exported Clean URLs (no trailing slashes)
 export const productsUrl = rawProductsUrl.replace(/\/+$/, '');
 export const cartUrl = rawCartUrl.replace(/\/+$/, '');
 export const searchUrl = rawSearchUrl.replace(/\/+$/, '');
 export const usersUrl = rawUsersUrl.replace(/\/+$/, '');
-export const ordersUrl = rawOrdersUrl.replace(/\/+$/, '');
 export const adminUrl = rawAdminUrl.replace(/\/+$/, '');
-export const ordersAdminUrl = rawOrdersAdminUrl.replace(/\/+$/, '');
 
 // 🛠️ URL Builder Helper (Export this for consistent usage)
 export const apiUrl = {
   users: (path: string) => buildUrl(usersUrl, path),
   admin: (path: string) => buildUrl(adminUrl, path),
-  orders: (path: string) => buildUrl(ordersUrl, path),
   cart: (path: string) => buildUrl(cartUrl, `cart/${path}`),  // ✅ ADD cart/ prefix here
   products: (path: string) => buildUrl(productsUrl, path),
   search: (path: string) => buildUrl(searchUrl, path),
-  ordersAdmin: (path: string) => buildUrl(ordersAdminUrl, path),
 };
 
 // Add logging right after the export statements
@@ -57,7 +53,6 @@ console.log('usersUrl:', usersUrl);
 console.log('productsUrl:', productsUrl);
 console.log('cartUrl:', cartUrl);
 console.log('searchUrl:', searchUrl);
-console.log('ordersUrl:', ordersUrl);
 console.log('adminUrl:', adminUrl);
 
 export default axiosClient

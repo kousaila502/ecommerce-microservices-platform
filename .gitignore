@@ -18,3 +18,4 @@ package-lock.json
 container-config.yaml 
 
 controllers/multicloud-controller/container-config.yaml
+.vercel

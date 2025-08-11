@@ -45,7 +45,7 @@ import {
   LocalShipping as ShipIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../../contexts/AuthContext';
-import { ordersUrl } from '../../../api/config'; // Adjust the import path as necessary
+import { rawOrdersAdminUrl } from '../../../api/config'; // Adjust the import path as necessary
 
 // You'll need to create this API function
 // import { getAllOrders, updateOrderStatus } from '../../../api/order';
@@ -87,7 +87,8 @@ const AdminOrderManagement: React.FC = () => {
     setLoading(true);
     try {
       // TODO: Replace with your actual API call
-      const response = await fetch(`${ordersUrl}/admin/orders/`, {
+      console.log('Fetching orders from:', rawOrdersAdminUrl);
+      const response = await fetch(`${rawOrdersAdminUrl}/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -145,7 +146,7 @@ const AdminOrderManagement: React.FC = () => {
 
     try {
       // TODO: Replace with your actual API call
-      const response = await fetch(`${ordersUrl}/orders/${orderId}`, {
+      const response = await fetch(`${rawOrdersAdminUrl}/${orderId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

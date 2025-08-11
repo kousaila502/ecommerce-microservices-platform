@@ -22,7 +22,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getOrderStats } from '../../../api/order';
-import { apiUrl, ordersAdminUrl, ordersUrl } from '../../../api/config';
+import { apiUrl } from '../../../api/config';
 
 interface UserStats {
   total_users: number;

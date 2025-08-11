@@ -10,7 +10,6 @@ metadata:
     research-phase: multicloud-gitops-research
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
@@ -40,7 +39,7 @@ spec:
     - host: 34.95.5.30.nip.io
       http:
         paths:
-          # Root OpenAPI route
+          # Order Service Routes - ALL DIRECT MAPPING (NO REWRITE)
           - path: /openapi.json
             pathType: Exact
             backend:
@@ -49,16 +48,22 @@ spec:
                 port:
                   number: 8081
           
-          # User Service Routes (UNCHANGED)
-          - path: /user(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /docs
+            pathType: Exact
             backend:
               service:
-                name: user-service
+                name: order-service
                 port:
-                  number: 9090
+                  number: 8081
           
-          # Order Service Documentation Routes - NO REWRITE
+          - path: /redoc
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+          
           - path: /order/docs
             pathType: Exact
             backend:
@@ -66,6 +71,7 @@ spec:
                 name: order-service
                 port:
                   number: 8081
+          
           - path: /order/redoc  
             pathType: Exact
             backend:
@@ -73,6 +79,7 @@ spec:
                 name: order-service
                 port:
                   number: 8081
+          
           - path: /order/openapi.json
             pathType: Exact
             backend:
@@ -81,7 +88,6 @@ spec:
                 port:
                   number: 8081
           
-          # Orders Documentation Routes - NO REWRITE (ADDED THESE)
           - path: /orders/docs
             pathType: Exact
             backend:
@@ -89,6 +95,7 @@ spec:
                 name: order-service
                 port:
                   number: 8081
+          
           - path: /orders/redoc
             pathType: Exact
             backend:
@@ -96,6 +103,7 @@ spec:
                 name: order-service
                 port:
                   number: 8081
+          
           - path: /orders/openapi.json
             pathType: Exact
             backend:
@@ -104,7 +112,55 @@ spec:
                 port:
                   number: 8081
 
-          # Order Service API Routes - WITH REWRITE
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+          
+          - path: /orders/health
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+          
+          - path: /order/health
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+          # Missing API routes
+          - path: /orders
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+                  
+          - path: /admin/orders
+            pathType: Exact  
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+                  
+          - path: /admin/orders/stats
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+
+          # Order Service API Routes - DIRECT MAPPING
           - path: /orders(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
@@ -121,28 +177,15 @@ spec:
                 port:
                   number: 8081
 
-          # Health Routes (Exact - No Rewrite)
-          - path: /health
-            pathType: Exact
+          # User Service Routes - KEEP REWRITE FOR USER SERVICE ONLY
+          - path: /user(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: user-service
                 port:
                   number: 9090
-          - path: /orders/health
-            pathType: Exact
-            backend:
-              service:
-                name: order-service
-                port:
-                  number: 8081
-          - path: /order/health
-            pathType: Exact
-            backend:
-              service:
-                name: order-service
-                port:
-                  number: 8081
+          
           - path: /user/health
             pathType: Exact
             backend:
@@ -150,6 +193,7 @@ spec:
                 name: user-service
                 port:
                   number: 9090
+          
           - path: /api/status
             pathType: Exact
             backend:
@@ -157,13 +201,7 @@ spec:
                 name: user-service
                 port:
                   number: 9090
-          - path: /docs
-            pathType: Exact
-            backend:
-              service:
-                name: user-service
-                port:
-                  number: 9090
+
           - path: /api(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
