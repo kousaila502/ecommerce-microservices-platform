@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from utils.health_checker import (
+from utils.startup_health_checker import (
     check_postgres_health,
     check_redis_health, 
     check_user_service_health,
