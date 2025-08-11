@@ -1,4 +1,4 @@
-﻿# app.py - Fixed with all routers included
+﻿# app.py - Fixed with all routers included and corrected URLs
 
 import os
 import asyncio
@@ -60,9 +60,9 @@ async def lifespan(app: FastAPI):
     
     # Live System URLs
     print("\n🌐 LIVE SYSTEM INTEGRATION:")
-    print("   🎯 Frontend: https://ecommerce-microservices-platform.vercel.app")
-    print("   🔗 API Gateway: http://34.95.5.30.nip.io")
-    print("   🎮 Controller: http://techmart-controller.uksouth.azurecontainer.io:3000")
+    print("   🎯 Frontend: https://ecommerce-app-omega-two-64.vercel.app")
+    print("   🔗 API Gateway: https://34.95.5.30.nip.io")
+    print("   🎮 Controller: https://techmart-controller.uksouth.azurecontainer.io:3000")
     
     # CORS Configuration
     print(f"\n🔒 CORS CONFIGURATION:")
@@ -112,10 +112,11 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
+    root_path="/user",  # Fix for API Gateway routing
     lifespan=lifespan,
     contact={
         "name": "E-Commerce Platform Team",
-        "url": "https://ecommerce-microservices-platform.vercel.app",
+        "url": "https://ecommerce-app-omega-two-64.vercel.app",
         "email": "support@ecommerce-platform.com"
     },
     license_info={
@@ -124,7 +125,7 @@ app = FastAPI(
     },
     servers=[
         {
-            "url": "http://34.95.5.30.nip.io/user",
+            "url": "https://34.95.5.30.nip.io/user",
             "description": "Production API Gateway (GKE)"
         },
         {
@@ -140,12 +141,12 @@ app = FastAPI(
 
 # CORS Configuration for Live System
 cors_origins = [
-    "https://ecommerce-microservices-platform.vercel.app",  # Live Frontend (Vercel)
-    "http://34.95.5.30.nip.io",                            # API Gateway (GKE) - UPDATED
+    "https://ecommerce-app-omega-two-64.vercel.app",               # Live Frontend (Vercel) - UPDATED
+    "https://34.95.5.30.nip.io",                                  # API Gateway (GKE) - UPDATED TO HTTPS
     "https://ecommerce-cart-service-f2a908c60d8a.herokuapp.com",      # Cart Service (Heroku)
     "https://ecommerce-product-service-56575270905a.herokuapp.com",   # Product Service (Heroku)
     "https://ecommerce-microservices-platform.onrender.com",          # Search Service (Render)
-    "http://techmart-controller.uksouth.azurecontainer.io:3000",     # Controller (Azure)
+    "https://techmart-controller.uksouth.azurecontainer.io:3000",     # Controller (Azure) - UPDATED TO HTTPS
     "http://localhost:3000",   # Dev frontend
     "http://127.0.0.1:3000",   # Dev frontend alt
     "http://localhost:8080",   # Dev services
@@ -218,9 +219,9 @@ async def health_check():
             "swagger-documentation"
         ],
         "live_system": {
-            "frontend": "https://ecommerce-microservices-platform.vercel.app",
-            "api_gateway": "http://34.95.5.30.nip.io",
-            "controller": "http://techmart-controller.uksouth.azurecontainer.io:3000"
+            "frontend": "https://ecommerce-app-omega-two-64.vercel.app",
+            "api_gateway": "https://34.95.5.30.nip.io",
+            "controller": "https://techmart-controller.uksouth.azurecontainer.io:3000"
         },
         "cors_enabled": True,
         "cors_origins_count": len(cors_origins),
@@ -258,9 +259,9 @@ async def service_info():
         "database": "Neon PostgreSQL",
         "timestamp": datetime.utcnow().isoformat(),
         "live_system": {
-            "frontend": "https://ecommerce-microservices-platform.vercel.app",
-            "api_gateway": "http://34.95.5.30.nip.io",
-            "controller": "http://techmart-controller.uksouth.azurecontainer.io:3000"
+            "frontend": "https://ecommerce-app-omega-two-64.vercel.app",
+            "api_gateway": "https://34.95.5.30.nip.io",
+            "controller": "https://techmart-controller.uksouth.azurecontainer.io:3000"
         },
         "endpoints": {
             "authentication": {
@@ -321,8 +322,8 @@ async def root():
         "database": "Neon PostgreSQL",
         "status": "operational",
         "live_system": {
-            "frontend": "https://ecommerce-microservices-platform.vercel.app",
-            "api_gateway": "http://34.95.5.30.nip.io"
+            "frontend": "https://ecommerce-app-omega-two-64.vercel.app",
+            "api_gateway": "https://34.95.5.30.nip.io"
         },
         "quick_links": {
             "documentation": "/docs",
@@ -356,5 +357,3 @@ if __name__ == "__main__":
         log_level="info",
         access_log=True
     )
-
-
