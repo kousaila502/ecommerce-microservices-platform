@@ -52,7 +52,7 @@ This service provides extensive health check endpoints to monitor all live syste
     version="2.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"  # Fixed: removed /order/ prefix
+    openapi_url="/orders/openapi.json"  # Fixed: removed /order/ prefix
 )
 
 # Enhanced CORS middleware with comprehensive configuration
@@ -97,14 +97,6 @@ app.add_middleware(
 app.include_router(orders.router, prefix="/orders", tags=["orders"])
 app.include_router(admin_orders.router, prefix="/admin/orders", tags=["admin"])
 app.include_router(health.router, prefix="/health", tags=["health"])  # Added health router
-
-@app.get("/openapi.json", include_in_schema=False, tags=["documentation"])
-async def get_openapi_schema():
-    """
-    Serve OpenAPI schema at /openapi.json path
-    This fixes Swagger UI and ReDoc trying to fetch from wrong URL
-    """
-    return app.openapi()
 
 @app.on_event("startup")
 async def startup_event():

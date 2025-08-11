@@ -40,6 +40,13 @@ spec:
     - host: 34.95.5.30.nip.io
       http:
         paths:
+          - path: /openapi.json
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
           # User Service Routes (UNCHANGED - EXACTLY AS BEFORE)
           - path: /user(/|$)(.*)
             pathType: ImplementationSpecific
@@ -48,6 +55,28 @@ spec:
                 name: user-service
                 port:
                   number: 9090
+          # special route for docs 
+          - path: /order/docs
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+          - path: /order/redoc  
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+          - path: /order/openapi.json
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
 
           # ✅ FIXED: Order Service Routes (now uses regex like user)
           - path: /orders(/|$)(.*)
