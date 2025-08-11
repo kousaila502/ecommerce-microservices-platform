@@ -133,3 +133,16 @@ class OrderStats(BaseModel):
     total_revenue: Decimal
     orders_today: int
     orders_this_month: int
+
+# Error response schema
+class ErrorResponse(BaseModel):
+    error: str
+    message: str
+    status_code: int
+    timestamp: datetime
+
+# Order status history schema
+class OrderStatusHistory(BaseModel):
+    status: OrderStatus
+    changed_at: datetime
+    changed_by: str

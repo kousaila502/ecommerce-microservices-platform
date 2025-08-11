@@ -12,7 +12,20 @@ from schemas.order_schemas import OrderCreate, OrderResponse, OrderSummary, Orde
 
 router = APIRouter()
 
-@router.post("/", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=OrderResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create new order",
+    description="Create a new order from user's cart.",
+    tags=["orders"],
+    responses={
+        201: {"description": "Order created successfully"},
+        400: {"description": "Bad request"},
+        401: {"description": "Unauthorized"},
+        500: {"description": "Failed to create order"}
+    }
+)
 async def create_order_simple(
     order_data: Optional[OrderCreate] = None,
     current_user: User = Depends(get_current_user),
@@ -40,7 +53,17 @@ async def create_order_simple(
             detail="Failed to create order"
         )
 
-@router.get("/", response_model=List[OrderSummary])
+@router.get(
+    "/",
+    response_model=List[OrderSummary],
+    summary="Get user orders",
+    description="Retrieve orders for the authenticated user.",
+    tags=["orders"],
+    responses={
+        200: {"description": "List of user orders"},
+        401: {"description": "Unauthorized"}
+    }
+)
 async def get_my_orders(
     page: int = 1,
     size: int = 10,
@@ -52,7 +75,18 @@ async def get_my_orders(
     orders = await order_service.get_user_orders(current_user.id, page, size)
     return orders
 
-@router.get("/{order_id}", response_model=OrderResponse)
+@router.get(
+    "/{order_id}",
+    response_model=OrderResponse,
+    summary="Get order by ID",
+    description="Retrieve a specific order by ID.",
+    tags=["orders"],
+    responses={
+        200: {"description": "Order details"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Order not found"}
+    }
+)
 async def get_order(
     order_id: int,
     current_user: User = Depends(get_current_user),
@@ -70,7 +104,20 @@ async def get_order(
     
     return order
 
-@router.put("/{order_id}", response_model=OrderResponse)
+@router.put(
+    "/{order_id}",
+    response_model=OrderResponse,
+    summary="Update order (admin only)",
+    description="Update order details (admin only).",
+    tags=["orders"],
+    responses={
+        200: {"description": "Order updated"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Order not found"},
+        500: {"description": "Failed to update order"}
+    }
+)
 async def update_order(
     order_id: int,
     update_data: OrderUpdate,

@@ -10,11 +10,38 @@ from routers import orders, admin_orders
 
 # Create FastAPI application
 app = FastAPI(
-    title="Order Service",
-    description="E-commerce Order Management Service",
+    title="Order Service API - Live System Integration",
+    description="""
+E-commerce Order Management Service with comprehensive live system integration
+
+## 🌐 Live System Architecture
+This Order Service integrates with a multi-cloud microservices ecosystem:
+
+### Frontend & Gateway
+- **Frontend**: Vercel - https://ecommerce-app-omega-two-64.vercel.app
+- **API Gateway**: GKE Kubernetes - https://34.95.5.30.nip.io
+
+### External Services
+- **User Service**: GKE Kubernetes (via API Gateway)
+- **Cart Service**: Heroku Platform
+- **Product Service**: Heroku Platform  
+- **Search Service**: Render Platform
+
+### Data Layer
+- **Database**: Neon PostgreSQL (AWS us-east-2)
+- **Cache**: Upstash Redis
+
+## 🎯 Features
+- Order creation and management
+- Multi-platform service integration
+- Comprehensive health monitoring
+- JWT authentication
+- CORS support for live frontend
+    """,
     version="2.1.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
 )
 
 # Enhanced CORS middleware with comprehensive configuration
