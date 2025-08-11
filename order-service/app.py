@@ -52,7 +52,7 @@ This service provides extensive health check endpoints to monitor all live syste
     version="2.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/orders/openapi.json"  # Fixed: removed /order/ prefix
+    openapi_url="/orders/orders/openapi.json"  # Fixed: removed /order/ prefix
 )
 
 # Enhanced CORS middleware with comprehensive configuration

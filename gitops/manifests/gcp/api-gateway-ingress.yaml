@@ -40,6 +40,7 @@ spec:
     - host: 34.95.5.30.nip.io
       http:
         paths:
+          # Root OpenAPI route
           - path: /openapi.json
             pathType: Exact
             backend:
@@ -47,7 +48,8 @@ spec:
                 name: order-service
                 port:
                   number: 8081
-          # User Service Routes (UNCHANGED - EXACTLY AS BEFORE)
+          
+          # User Service Routes (UNCHANGED)
           - path: /user(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
@@ -55,7 +57,8 @@ spec:
                 name: user-service
                 port:
                   number: 9090
-          # special route for docs 
+          
+          # Order Service Documentation Routes - NO REWRITE
           - path: /order/docs
             pathType: Exact
             backend:
@@ -77,8 +80,31 @@ spec:
                 name: order-service
                 port:
                   number: 8081
+          
+          # Orders Documentation Routes - NO REWRITE (ADDED THESE)
+          - path: /orders/docs
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+          - path: /orders/redoc
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
+          - path: /orders/openapi.json
+            pathType: Exact
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8081
 
-          # ✅ FIXED: Order Service Routes (now uses regex like user)
+          # Order Service API Routes - WITH REWRITE
           - path: /orders(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
@@ -87,7 +113,6 @@ spec:
                 port:
                   number: 8081
 
-          # Order Service Routes (legacy, still regex/rewrite for backward compatibility)
           - path: /order(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
@@ -96,7 +121,7 @@ spec:
                 port:
                   number: 8081
 
-          # Everything else UNCHANGED
+          # Health Routes (Exact - No Rewrite)
           - path: /health
             pathType: Exact
             backend:
