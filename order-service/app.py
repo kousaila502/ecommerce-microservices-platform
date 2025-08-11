@@ -50,9 +50,9 @@ This service provides extensive health check endpoints to monitor all live syste
 - Live system status overview
     """,
     version="2.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/orders/orders/openapi.json"  # Fixed: removed /order/ prefix
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None  # Fixed: removed /order/ prefix
 )
 
 # Enhanced CORS middleware with comprehensive configuration
@@ -97,6 +97,30 @@ app.add_middleware(
 app.include_router(orders.router, prefix="/orders", tags=["orders"])
 app.include_router(admin_orders.router, prefix="/admin/orders", tags=["admin"])
 app.include_router(health.router, prefix="/health", tags=["health"])  # Added health router
+
+
+@app.get("/docs")
+async def custom_docs():
+    """Custom docs endpoint without authentication"""
+    from fastapi.openapi.docs import get_swagger_ui_html
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title="Order Service API"
+    )
+
+@app.get("/redoc")
+async def custom_redoc():
+    """Custom redoc endpoint without authentication"""
+    from fastapi.openapi.docs import get_redoc_html
+    return get_redoc_html(
+        openapi_url="/openapi.json",
+        title="Order Service API"
+    )
+
+@app.get("/openapi.json", include_in_schema=False)
+async def custom_openapi():
+    """Custom OpenAPI schema without authentication"""
+    return app.openapi()
 
 @app.on_event("startup")
 async def startup_event():
