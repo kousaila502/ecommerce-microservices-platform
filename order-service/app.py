@@ -98,6 +98,14 @@ app.include_router(orders.router, prefix="/orders", tags=["orders"])
 app.include_router(admin_orders.router, prefix="/admin/orders", tags=["admin"])
 app.include_router(health.router, prefix="/health", tags=["health"])  # Added health router
 
+@app.get("/openapi.json", include_in_schema=False, tags=["documentation"])
+async def get_openapi_schema():
+    """
+    Serve OpenAPI schema at /openapi.json path
+    This fixes Swagger UI and ReDoc trying to fetch from wrong URL
+    """
+    return app.openapi()
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize database connection on startup"""
