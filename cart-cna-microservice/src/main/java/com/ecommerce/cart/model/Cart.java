@@ -1,5 +1,9 @@
 package com.ecommerce.cart.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotNull;
+import javax.validation.Valid;
+
 import java.util.List;
 import java.util.ArrayList;
 import lombok.AllArgsConstructor;
@@ -7,14 +11,28 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+@Schema(
+    description = "Shopping cart containing user's selected items",
+    example = "{\"userId\":123,\"items\":[{\"productId\":456,\"title\":\"Wireless Headphones\",\"quantity\":2,\"price\":29.99,\"currency\":\"USD\"}],\"total\":59.98,\"currency\":\"USD\"}"
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Cart {
+    
+    @Schema(description = "Unique identifier of the cart owner", example = "123", required = true)
+    @NotNull(message = "User ID is required")
     private Integer userId;
-    private List<CartItem> items;
+
+    @Schema(description = "List of items in the cart")
+    @Valid
+    private List<CartItem> items = new ArrayList<>();
+
+    @Schema(description = "Total price of all items in cart", example = "59.98", accessMode = Schema.AccessMode.READ_ONLY)
     private float total;
-    private String currency;
+
+    @Schema(description = "Currency for all prices in cart", example = "USD", defaultValue = "USD")
+    private String currency = "USD";
     
     // Constructor with default values
     public Cart(Integer userId) {
@@ -25,7 +43,7 @@ public class Cart {
     }
     
     // Helper method to generate Redis key
-    @JsonIgnore  // Don't serialize this method result
+    @JsonIgnore
     public String getRedisKey() {
         return "cart:" + userId;
     }
@@ -105,20 +123,20 @@ public class Cart {
     }
     
     // Get item count
-    @JsonIgnore  // Don't serialize this method result
+    @JsonIgnore
     public int getItemCount() {
         if (items == null) return 0;
         return items.stream().mapToInt(CartItem::getQuantity).sum();
     }
     
     // Check if cart is empty
-    @JsonIgnore  // Don't serialize this method result
+    @JsonIgnore
     public boolean isEmpty() {
         return items == null || items.isEmpty();
     }
     
     // Validation method
-    @JsonIgnore  // Don't serialize this method result
+    @JsonIgnore
     public boolean isValid() {
         return userId != null && items != null;
     }

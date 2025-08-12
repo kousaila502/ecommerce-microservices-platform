@@ -85,6 +85,18 @@ public class CartController {
     /**
      * Get all carts (admin only)
      */
+    @Operation(
+        summary = "Get all carts (admin only)",
+        description = "Returns all carts in the system. Requires admin privileges.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Carts retrieved successfully", 
+                    content = @Content(schema = @Schema(implementation = Cart.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid JWT token"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - Not an admin user"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("/all")
     public Mono<ResponseEntity<Flux<Cart>>> getAllCarts(ServerWebExchange exchange) {
         try {
@@ -165,8 +177,22 @@ public class CartController {
     /**
      * Add/Update entire cart - Enhanced with validation
      */
+    @Operation(
+        summary = "Update user's cart",
+        description = "Updates the entire cart for the authenticated user. Validates user and cart contents.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Cart updated successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid JWT token"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - Cannot modify another user's cart"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PostMapping("")
-    public Mono<ResponseEntity<String>> updateCart(@RequestBody Mono<Cart> cartMono, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<String>> updateCart(
+            @Parameter(description = "Cart data to update", required = true)
+            @RequestBody Mono<Cart> cartMono, 
+            ServerWebExchange exchange) {
         try {
             String token = extractToken(exchange);
             
@@ -184,9 +210,9 @@ public class CartController {
                             LOG.info("Updating cart for user: {} ({})", user.getId(), user.getEmail());
 
                             return cartService.saveCart(cart)
-    .map(saved -> ResponseEntity.ok("Cart updated successfully"))
-    .onErrorReturn(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body("Failed to update cart"));
+                                    .map(saved -> ResponseEntity.ok("Cart updated successfully"))
+                                    .onErrorReturn(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                            .body("Failed to update cart"));
                         })
                     )
                     .onErrorResume(UserValidationException.class, error -> {
@@ -262,9 +288,22 @@ public class CartController {
     /**
      * Remove item from cart - Enhanced with validation
      */
+    @Operation(
+        summary = "Remove item from cart",
+        description = "Removes a specific item from the authenticated user's cart.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Item removed successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid JWT token"),
+        @ApiResponse(responseCode = "404", description = "Item not found in cart"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @DeleteMapping("/items/{productId}")
-    public Mono<ResponseEntity<String>> removeItem(@PathVariable Integer productId,
-                                                  ServerWebExchange exchange) {
+    public Mono<ResponseEntity<String>> removeItem(
+            @Parameter(description = "Product ID to remove", required = true, example = "456")
+            @PathVariable Integer productId,
+            ServerWebExchange exchange) {
         try {
             String token = extractToken(exchange);
             
@@ -293,10 +332,25 @@ public class CartController {
     /**
      * Update item quantity - Enhanced with stock validation
      */
+    @Operation(
+        summary = "Update item quantity in cart",
+        description = "Updates the quantity of a specific item in the authenticated user's cart.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Item quantity updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid quantity or stock validation failed"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid JWT token"),
+        @ApiResponse(responseCode = "404", description = "Item not found in cart"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PutMapping("/items/{productId}")
-    public Mono<ResponseEntity<String>> updateItemQuantity(@PathVariable Integer productId,
-                                                          @RequestParam int quantity,
-                                                          ServerWebExchange exchange) {
+    public Mono<ResponseEntity<String>> updateItemQuantity(
+            @Parameter(description = "Product ID to update", required = true, example = "456")
+            @PathVariable Integer productId,
+            @Parameter(description = "New quantity", required = true, example = "2")
+            @RequestParam int quantity,
+            ServerWebExchange exchange) {
         try {
             String token = extractToken(exchange);
             
@@ -331,6 +385,17 @@ public class CartController {
     /**
      * Clear entire cart - Enhanced with validation
      */
+    @Operation(
+        summary = "Clear user's cart",
+        description = "Removes all items from the authenticated user's cart.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Cart cleared successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid JWT token"),
+        @ApiResponse(responseCode = "404", description = "Cart not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @DeleteMapping("")
     public Mono<ResponseEntity<String>> clearCart(ServerWebExchange exchange) {
         try {
@@ -363,6 +428,16 @@ public class CartController {
     /**
      * Get cart summary - Enhanced with validation
      */
+    @Operation(
+        summary = "Get cart summary",
+        description = "Returns a summary of the authenticated user's cart including item count and total price.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Cart summary retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid JWT token"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("/summary")
     public Mono<ResponseEntity<Object>> getCartSummary(ServerWebExchange exchange) {
         try {
@@ -374,8 +449,8 @@ public class CartController {
                     userValidationService.getUserDetails(token)
             )
             .map(tuple -> {
-                int count = tuple.getT1();  // Renamed to avoid conflict
-                BigDecimal totalAmount = tuple.getT2();  // Renamed to avoid conflict
+                int count = tuple.getT1();
+                BigDecimal totalAmount = tuple.getT2();
                 UserResponse user = tuple.getT3();
                 
                 return ResponseEntity.ok((Object) new Object() {
@@ -402,6 +477,16 @@ public class CartController {
     /**
      * Validate cart for checkout - Enhanced with real validation
      */
+    @Operation(
+        summary = "Validate cart for checkout",
+        description = "Validates the authenticated user's cart for checkout, including product and stock checks.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Cart validation result"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid JWT token"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("/validate")
     public Mono<ResponseEntity<Object>> validateCart(ServerWebExchange exchange) {
         try {
@@ -412,7 +497,7 @@ public class CartController {
                         public final boolean valid = true;
                         public final String message = "Cart is valid for checkout";
                         public final int itemCount = validatedCart.getItemCount();
-                        public final BigDecimal total = BigDecimal.valueOf(validatedCart.getTotal()); // Convert float to BigDecimal
+                        public final BigDecimal total = BigDecimal.valueOf(validatedCart.getTotal());
                     }))
                     .onErrorResume(UserValidationException.class, error -> {
                         LOG.warn("User validation failed for validateCart: {}", error.getMessage());
@@ -444,6 +529,16 @@ public class CartController {
     /**
      * Refresh cart with current product data
      */
+    @Operation(
+        summary = "Refresh cart with current product data",
+        description = "Refreshes the authenticated user's cart, updating items with the latest product information.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Cart refreshed successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid JWT token"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PostMapping("/refresh")
     public Mono<ResponseEntity<String>> refreshCart(ServerWebExchange exchange) {
         try {
@@ -474,16 +569,40 @@ public class CartController {
     /**
      * Legacy endpoint for backward compatibility with path parameter
      */
+    @Operation(
+        summary = "Get cart summary (legacy)",
+        description = "Legacy endpoint for backward compatibility. Returns cart summary for authenticated user.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Cart summary retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid JWT token")
+    })
     @GetMapping("/{userId}/summary")
-    public Mono<ResponseEntity<Object>> getCartSummaryLegacy(@PathVariable Integer userId, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<Object>> getCartSummaryLegacy(
+            @Parameter(description = "User ID (for compatibility only)", required = true, example = "123")
+            @PathVariable Integer userId, 
+            ServerWebExchange exchange) {
         return getCartSummary(exchange);
     }
 
     /**
      * Legacy endpoint for backward compatibility with path parameter
      */
+    @Operation(
+        summary = "Validate cart for checkout (legacy)",
+        description = "Legacy endpoint for backward compatibility. Validates cart for authenticated user.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Cart validation result"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid JWT token")
+    })
     @GetMapping("/{userId}/validate")
-    public Mono<ResponseEntity<Object>> validateCartLegacy(@PathVariable Integer userId, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<Object>> validateCartLegacy(
+            @Parameter(description = "User ID (for compatibility only)", required = true, example = "123")
+            @PathVariable Integer userId, 
+            ServerWebExchange exchange) {
         return validateCart(exchange);
     }
 }

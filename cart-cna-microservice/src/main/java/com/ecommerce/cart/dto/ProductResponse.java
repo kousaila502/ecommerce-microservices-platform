@@ -1,4 +1,7 @@
+
 package com.ecommerce.cart.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -8,51 +11,83 @@ import java.math.BigDecimal;
  * DTO for Product data from Product Service
  * Represents the actual product information within the API response wrapper
  */
+
+@Schema(description = "Product information from Product Service")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ProductResponse {
 
+
+    @Schema(description = "Unique product identifier", example = "456", required = true)
     @JsonProperty("_id")
     private Integer id;
 
+
+    @Schema(description = "Product SKU code", example = "WH-001", required = true)
     @JsonProperty("sku")
     private String sku;
 
+
+    @Schema(description = "Product title or name", example = "Wireless Headphones", required = true)
     @JsonProperty("title")
     private String title;
 
+
+    @Schema(description = "Detailed product description", example = "High-fidelity wireless headphones with noise cancellation.")
     @JsonProperty("description")
     private String description;
 
+
+    @Schema(description = "Product price in specified currency", example = "99.99", required = true)
     @JsonProperty("price")
     private BigDecimal price;
 
+
+    @Schema(description = "Currency code for product price", example = "USD", required = true)
     @JsonProperty("currency")
     private String currency;
 
+
+    @Schema(description = "Product category", example = "Electronics")
     @JsonProperty("category")
     private String category;
 
+
+    @Schema(description = "Department or section for the product", example = "Audio")
     @JsonProperty("department")
     private String department;
 
+
+    @Schema(description = "URL to product image", example = "https://example.com/images/headphones.jpg")
     @JsonProperty("image")
     private String image;
 
+
+    @Schema(description = "Available stock quantity", example = "25", required = true)
     @JsonProperty("stock")
     private Integer stock;
 
+
+    @Schema(description = "Average customer rating (1.0 to 5.0)", example = "4.7")
     @JsonProperty("rating")
     private Double rating;
 
+
+    @Schema(description = "Brand or manufacturer name", example = "Sony")
     @JsonProperty("brand")
     private String brand;
 
+
+    @Schema(description = "Whether the product is active and available for sale", example = "true", required = true)
     @JsonProperty("isActive")
     private Boolean isActive;
 
+
+    @Schema(description = "Timestamp when product was created", example = "2024-01-01T12:00:00Z", accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty("createdAt")
     private String createdAt;
 
+
+    @Schema(description = "Timestamp when product was last updated", example = "2024-06-01T08:30:00Z", accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty("updatedAt")
     private String updatedAt;
 

@@ -60,10 +60,10 @@ const ProductPage = () => {
   const [buyingNow, setBuyingNow] = React.useState(false);
   const [quantity, setQuantity] = React.useState(1);
   const [isFavorite, setIsFavorite] = React.useState(false);
-  const [snackbar, setSnackbar] = React.useState({ 
-    open: false, 
-    message: '', 
-    severity: 'success' as 'success' | 'error' 
+  const [snackbar, setSnackbar] = React.useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error'
   });
 
   const onQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,45 +120,21 @@ const ProductPage = () => {
 
     setAddingToCart(true);
     try {
-      const item: AddToCartPayload = {
+      await addToCartContext({
         productId: product._id,
         sku: product.sku,
         title: product.title,
-        quantity,
         price: product.price,
-        currency: product.currency
-      };
+        currency: product.currency,
+        quantity,
+      });
 
-      const result = await addToCart(user.id, item, token);
-      if (result) {
-        try {
-          await addToCartContext({
-            productId: product._id,
-            sku: product.sku,
-            title: product.title,
-            price: product.price,
-            currency: product.currency,
-            quantity,
-          });
-        } catch (contextError) {
-          console.warn('Cart context update failed:', contextError);
-        }
-        
-        setSnackbar({
-          open: true,
-          message: `Added ${quantity} item(s) to cart!`,
-          severity: 'success'
-        });
-      } else {
-        setError('Failed to add item to cart.');
-        setSnackbar({
-          open: true,
-          message: 'Failed to add item to cart',
-          severity: 'error'
-        });
-      }
+      setSnackbar({
+        open: true,
+        message: `Added ${quantity} item(s) to cart!`,
+        severity: 'success'
+      });
     } catch (err) {
-      setError('Error adding item to cart.');
       setSnackbar({
         open: true,
         message: 'Error adding item to cart',
@@ -179,32 +155,21 @@ const ProductPage = () => {
 
     setBuyingNow(true);
     try {
-      const item: AddToCartPayload = {
+      await addToCartContext({
         productId: product._id,
         sku: product.sku,
         title: product.title,
-        quantity,
         price: product.price,
-        currency: product.currency
-      };
+        currency: product.currency,
+        quantity,
+      });
 
-      if (token) {
-        const result = await addToCart(user.id, item, token);
-        if (result) {
-          navigate('/cart', { 
-            state: { 
-              buyNow: true,
-              directPurchase: true
-            } 
-          });
-        } else {
-          setSnackbar({
-            open: true,
-            message: 'Failed to process purchase',
-            severity: 'error'
-          });
+      navigate('/cart', {
+        state: {
+          buyNow: true,
+          directPurchase: true
         }
-      }
+      });
     } catch (err) {
       setSnackbar({
         open: true,
@@ -287,8 +252,8 @@ const ProductPage = () => {
   if (error) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Button 
-          startIcon={<ArrowBackIcon />} 
+        <Button
+          startIcon={<ArrowBackIcon />}
           onClick={() => navigate(-1)}
           sx={{ mb: 3 }}
         >
@@ -305,8 +270,8 @@ const ProductPage = () => {
   if (!product) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Button 
-          startIcon={<ArrowBackIcon />} 
+        <Button
+          startIcon={<ArrowBackIcon />}
           onClick={() => navigate(-1)}
           sx={{ mb: 3 }}
         >
@@ -320,8 +285,8 @@ const ProductPage = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Back Button */}
-      <Button 
-        startIcon={<ArrowBackIcon />} 
+      <Button
+        startIcon={<ArrowBackIcon />}
         onClick={() => navigate(-1)}
         sx={{ mb: 3, '&:hover': { transform: 'translateX(-4px)' } }}
       >
@@ -329,10 +294,10 @@ const ProductPage = () => {
       </Button>
 
       <Fade in timeout={800}>
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            borderRadius: 4, 
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 4,
             overflow: 'hidden',
             border: '1px solid',
             borderColor: 'divider',
@@ -343,20 +308,20 @@ const ProductPage = () => {
             {/* Product Image Section */}
             <Grid item xs={12} md={6}>
               <Slide direction="right" in timeout={600}>
-                <Box sx={{ 
-                  p: 4, 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
+                <Box sx={{
+                  p: 4,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
                   height: '100%',
                   bgcolor: 'background.paper'
                 }}>
-                  
+
                   {/* Product Image */}
-                  <Card sx={{ 
-                    width: '100%', 
-                    maxWidth: 400, 
-                    height: 350, 
+                  <Card sx={{
+                    width: '100%',
+                    maxWidth: 400,
+                    height: 350,
                     borderRadius: 3,
                     mb: 3,
                     display: 'flex',
@@ -377,17 +342,17 @@ const ProductPage = () => {
                         component="img"
                         image={product.image}
                         alt={product.title}
-                        sx={{ 
-                          width: '100%', 
-                          height: '100%', 
+                        sx={{
+                          width: '100%',
+                          height: '100%',
                           objectFit: 'cover',
                           transition: 'transform 0.3s ease'
                         }}
                       />
                     ) : (
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                      <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'center',
                         height: '100%',
                         background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
@@ -419,9 +384,9 @@ const ProductPage = () => {
                   {/* Brand and Rating */}
                   <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
                     {product.brand && (
-                      <Chip 
-                        label={product.brand} 
-                        color="primary" 
+                      <Chip
+                        label={product.brand}
+                        color="primary"
                         variant="outlined"
                         icon={<VerifiedIcon />}
                         sx={{ fontWeight: 'bold' }}
@@ -466,13 +431,13 @@ const ProductPage = () => {
             <Grid item xs={12} md={6}>
               <Slide direction="left" in timeout={800}>
                 <Box sx={{ p: 4, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  
+
                   {/* Product Title */}
-                  <Typography 
-                    variant="h3" 
-                    fontWeight="bold" 
+                  <Typography
+                    variant="h3"
+                    fontWeight="bold"
                     gutterBottom
-                    sx={{ 
+                    sx={{
                       background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
@@ -484,10 +449,10 @@ const ProductPage = () => {
                   </Typography>
 
                   {/* Description */}
-                  <Typography 
-                    variant="body1" 
-                    color="text.secondary" 
-                    paragraph 
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    paragraph
                     sx={{ lineHeight: 1.7, mb: 3 }}
                   >
                     {product.description}
@@ -495,9 +460,9 @@ const ProductPage = () => {
 
                   {/* Price */}
                   <Box sx={{ mb: 3 }}>
-                    <Typography 
-                      variant="h2" 
-                      color="primary.main" 
+                    <Typography
+                      variant="h2"
+                      color="primary.main"
                       fontWeight="bold"
                       sx={{ mb: 0.5 }}
                     >
@@ -512,8 +477,8 @@ const ProductPage = () => {
                   <Paper sx={{ p: 2, mb: 3, bgcolor: 'background.default', borderRadius: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <InventoryIcon color={getStockColor() as any} />
-                      <Typography 
-                        variant="body1" 
+                      <Typography
+                        variant="body1"
                         color={`${getStockColor()}.main`}
                         fontWeight="medium"
                       >
@@ -540,11 +505,11 @@ const ProductPage = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <Tooltip title="Decrease quantity">
                         <span>
-                          <IconButton 
-                            onClick={handleMinus} 
+                          <IconButton
+                            onClick={handleMinus}
                             disabled={quantity <= 1}
                             color="primary"
-                            sx={{ 
+                            sx={{
                               '&:hover': { transform: 'scale(1.1)' },
                               '&:disabled': { opacity: 0.5 }
                             }}
@@ -553,7 +518,7 @@ const ProductPage = () => {
                           </IconButton>
                         </span>
                       </Tooltip>
-                      
+
                       <TextField
                         label="Quantity"
                         type="number"
@@ -561,21 +526,21 @@ const ProductPage = () => {
                         value={quantity}
                         onChange={onQuantityChange}
                         inputProps={{ min: 1, max: product.stock }}
-                        sx={{ 
+                        sx={{
                           width: 100,
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2
                           }
                         }}
                       />
-                      
+
                       <Tooltip title="Increase quantity">
                         <span>
-                          <IconButton 
+                          <IconButton
                             onClick={handleAdd}
                             disabled={quantity >= product.stock}
                             color="primary"
-                            sx={{ 
+                            sx={{
                               '&:hover': { transform: 'scale(1.1)' },
                               '&:disabled': { opacity: 0.5 }
                             }}
@@ -595,7 +560,7 @@ const ProductPage = () => {
                       startIcon={buyingNow ? <CircularProgress size={20} color="inherit" /> : <PaidIcon />}
                       onClick={handleBuyNow}
                       disabled={buyingNow || product.stock === 0 || !isAuthenticated}
-                      sx={{ 
+                      sx={{
                         py: 1.5,
                         borderRadius: 3,
                         background: 'linear-gradient(45deg, #FF6B6B, #FF8E53)',
@@ -615,7 +580,7 @@ const ProductPage = () => {
                       startIcon={addingToCart ? <CircularProgress size={20} /> : <ShoppingCartIcon />}
                       onClick={handleAddToCart}
                       disabled={addingToCart || product.stock === 0}
-                      sx={{ 
+                      sx={{
                         py: 1.5,
                         borderRadius: 3,
                         borderWidth: 2,
@@ -633,10 +598,10 @@ const ProductPage = () => {
                   {/* Secondary Actions */}
                   <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                     <Tooltip title={isFavorite ? "Remove from favorites" : "Add to favorites"}>
-                      <IconButton 
+                      <IconButton
                         onClick={handleFavoriteToggle}
                         color={isFavorite ? "error" : "default"}
-                        sx={{ 
+                        sx={{
                           '&:hover': { transform: 'scale(1.2)' },
                           transition: 'all 0.2s ease'
                         }}
@@ -644,12 +609,12 @@ const ProductPage = () => {
                         {isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                       </IconButton>
                     </Tooltip>
-                    
+
                     <Tooltip title="Share product">
-                      <IconButton 
+                      <IconButton
                         onClick={handleShare}
                         color="primary"
-                        sx={{ 
+                        sx={{
                           '&:hover': { transform: 'scale(1.2)' },
                           transition: 'all 0.2s ease'
                         }}
@@ -657,11 +622,11 @@ const ProductPage = () => {
                         <ShareIcon />
                       </IconButton>
                     </Tooltip>
-                    
+
                     <Tooltip title="Recommended">
-                      <IconButton 
+                      <IconButton
                         color="success"
-                        sx={{ 
+                        sx={{
                           '&:hover': { transform: 'scale(1.2)' },
                           transition: 'all 0.2s ease'
                         }}
@@ -673,9 +638,9 @@ const ProductPage = () => {
 
                   {/* Login prompt for non-authenticated users */}
                   {!isAuthenticated && (
-                    <Alert 
-                      severity="info" 
-                      sx={{ 
+                    <Alert
+                      severity="info"
+                      sx={{
                         borderRadius: 2,
                         '& .MuiAlert-message': {
                           display: 'flex',
@@ -685,14 +650,14 @@ const ProductPage = () => {
                       }}
                     >
                       <Typography variant="body2">
-                        Please 
-                        <Button 
-                          onClick={() => navigate('/login')} 
+                        Please
+                        <Button
+                          onClick={() => navigate('/login')}
                           size="small"
                           sx={{ mx: 0.5, textTransform: 'none' }}
                         >
                           sign in
-                        </Button> 
+                        </Button>
                         to add items to cart or make purchases.
                       </Typography>
                     </Alert>
@@ -711,9 +676,9 @@ const ProductPage = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
           sx={{ width: '100%', borderRadius: 2 }}
         >
           {snackbar.message}
