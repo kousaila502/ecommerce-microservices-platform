@@ -10,15 +10,61 @@ info:
 servers:
   - url: http://localhost:3001
     description: Development server
-  - url: https://34.95.5.30.nip.io
+  - url: https://ecommerce-product-service-56575270905a.herokuapp.com
     description: Production server
 
+tags:
+  - name: Products
+    description: Product management operations
+  - name: Deals
+    description: Deal management operations
+  - name: Health
+    description: Service health endpoints
+
 paths:
-  # PRODUCTS ENDPOINTS
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check for the Product Service
+      description: Returns service health and environment info.
+      responses:
+        200:
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /categories:
+    get:
+      tags: [Products]
+      summary: Get all product categories
+      description: Returns all unique product categories.
+      responses:
+        200:
+          description: List of product categories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoriesResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /products:
     get:
       tags: [Products]
       summary: Get all products
+      description: Retrieve all products with optional filters and pagination.
       parameters:
         - name: limit
           in: query
@@ -29,6 +75,22 @@ paths:
           in: query
           schema:
             type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: brand
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
         - name: search
           in: query
           schema:
@@ -39,19 +101,23 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  count:
-                    type: integer
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Product"
+                $ref: "#/components/schemas/ProductsResponse"
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     post:
       tags: [Products]
       summary: Create new product
+      description: Add a new product to the catalog.
       requestBody:
         required: true
         content:
@@ -61,95 +127,47 @@ paths:
       responses:
         201:
           description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /products/stats:
     get:
       tags: [Products]
       summary: Get product statistics
+      description: Returns aggregate statistics about products.
       responses:
         200:
           description: Product statistics
-
-  /products/{id}:
-    get:
-      tags: [Products]
-      summary: Get product by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        200:
-          description: Success
-        404:
-          description: Product not found
-
-  # DEALS ENDPOINTS
-  /deals:
-    get:
-      tags: [Deals]
-      summary: Get all deals
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 50
-        - name: department
-          in: query
-          schema:
-            type: string
-      responses:
-        200:
-          description: Success
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  count:
-                    type: integer
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Deal"
-    post:
-      tags: [Deals]
-      summary: Create new deal
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DealCreate"
-      responses:
-        201:
-          description: Deal created successfully
+                $ref: "#/components/schemas/ProductStatsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  /deals/seed:
-    post:
-      tags: [Deals]
-      summary: Seed deals from sample data
-      responses:
-        201:
-          description: Deals seeded successfully
-
-  /deals/stats:
+  /products/search/{term}:
     get:
-      tags: [Deals]
-      summary: Get deal statistics
-      responses:
-        200:
-          description: Deal statistics
-
-  /deals/search/{term}:
-    get:
-      tags: [Deals]
-      summary: Search deals
+      tags: [Products]
+      summary: Search products
+      description: Search products by term in title, description, department, category, brand, or SKU.
       parameters:
         - name: term
           in: path
@@ -164,11 +182,663 @@ paths:
       responses:
         200:
           description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/department/{department}:
+    get:
+      tags: [Products]
+      summary: Get products by department
+      description: Retrieve products filtered by department.
+      parameters:
+        - name: department
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Products by department
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/category/{category}:
+    get:
+      tags: [Products]
+      summary: Get products by category
+      description: Retrieve products filtered by category.
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Products by category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/brand/{brand}:
+    get:
+      tags: [Products]
+      summary: Get products by brand
+      description: Retrieve products filtered by brand.
+      parameters:
+        - name: brand
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Products by brand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/price/{minPrice}/{maxPrice}:
+    get:
+      tags: [Products]
+      summary: Get products by price range
+      description: Retrieve products within a price range.
+      parameters:
+        - name: minPrice
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: maxPrice
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Products by price range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductsResponse"
+        400:
+          description: Invalid price range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/sku/{sku}:
+    get:
+      tags: [Products]
+      summary: Get product by SKU
+      description: Retrieve a product by its SKU.
+      parameters:
+        - name: sku
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Product by SKU
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        404:
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/inventory/low-stock:
+    get:
+      tags: [Products]
+      summary: Get low stock products
+      description: Retrieve products with stock below a threshold.
+      parameters:
+        - name: threshold
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: Low stock products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{id}:
+    get:
+      tags: [Products]
+      summary: Get product by ID
+      description: Retrieve a product by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        404:
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags: [Products]
+      summary: Update product
+      description: Update an existing product by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        200:
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        404:
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [Products]
+      summary: Delete product (soft delete)
+      description: Soft delete a product by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Product deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        404:
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{id}/stock:
+    patch:
+      tags: [Products]
+      summary: Update product stock
+      description: Update the stock quantity for a product.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stock:
+                  type: integer
+      responses:
+        200:
+          description: Stock updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        404:
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{id}/restore:
+    patch:
+      tags: [Products]
+      summary: Restore soft-deleted product
+      description: Restore a previously soft-deleted product.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Product restored successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        404:
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{id}/hard-delete:
+    delete:
+      tags: [Products]
+      summary: Hard delete product
+      description: Permanently delete a product by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Product permanently deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        404:
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deals:
+    get:
+      tags: [Deals]
+      summary: Get all deals
+      description: Retrieve all deals with optional filters and pagination.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: department
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealsResponse"
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [Deals]
+      summary: Create new deal
+      description: Add a new deal.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DealCreate"
+      responses:
+        201:
+          description: Deal created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealResponse"
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deals/seed:
+    post:
+      tags: [Deals]
+      summary: Seed deals from sample data
+      description: Seed the deals collection with sample data.
+      responses:
+        201:
+          description: Deals seeded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deals/stats:
+    get:
+      tags: [Deals]
+      summary: Get deal statistics
+      description: Returns aggregate statistics about deals.
+      responses:
+        200:
+          description: Deal statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealStatsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deals/search/{term}:
+    get:
+      tags: [Deals]
+      summary: Search deals
+      description: Search deals by term in title, description, department, or shortDescription.
+      parameters:
+        - name: term
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deals/department/{department}:
+    get:
+      tags: [Deals]
+      summary: Get deals by department
+      description: Retrieve deals filtered by department.
+      parameters:
+        - name: department
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Deals by department
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deals/product/{productId}:
+    get:
+      tags: [Deals]
+      summary: Get deals by product ID
+      description: Retrieve deals for a specific product.
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Deals by product ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deals/price/{minPrice}/{maxPrice}:
+    get:
+      tags: [Deals]
+      summary: Get deals by price range
+      description: Retrieve deals within a price range.
+      parameters:
+        - name: minPrice
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: maxPrice
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Deals by price range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealsResponse"
+        400:
+          description: Invalid price range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /deals/top-rated:
     get:
       tags: [Deals]
       summary: Get top rated deals
+      description: Retrieve top rated deals.
       parameters:
         - name: limit
           in: query
@@ -178,31 +848,82 @@ paths:
       responses:
         200:
           description: Top rated deals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deals/recent:
+    get:
+      tags: [Deals]
+      summary: Get recent deals
+      description: Retrieve deals updated in the last 30 days.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: Recent deals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealsResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /deals/{id}:
     get:
       tags: [Deals]
       summary: Get deal by ID
+      description: Retrieve a deal by its ID.
       parameters:
         - name: id
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         200:
-          description: Success
+          description: Deal found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealResponse"
         404:
           description: Deal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     put:
       tags: [Deals]
       summary: Update deal
+      description: Update an existing deal by ID.
       parameters:
         - name: id
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -212,18 +933,119 @@ paths:
       responses:
         200:
           description: Deal updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealResponse"
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        404:
+          description: Deal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       tags: [Deals]
       summary: Delete deal (soft delete)
+      description: Soft delete a deal by ID.
       parameters:
         - name: id
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         200:
           description: Deal deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealResponse"
+        404:
+          description: Deal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deals/{id}/hard-delete:
+    delete:
+      tags: [Deals]
+      summary: Hard delete deal
+      description: Permanently delete a deal by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Deal permanently deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealResponse"
+        404:
+          description: Deal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deals/{id}/restore:
+    patch:
+      tags: [Deals]
+      summary: Restore soft-deleted deal
+      description: Restore a previously soft-deleted deal.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Deal restored successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealResponse"
+        404:
+          description: Deal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   schemas:
@@ -231,21 +1053,38 @@ components:
       type: object
       properties:
         _id:
-          type: integer
+          type: string
+          example: "301671"
         sku:
           type: string
         title:
           type: string
+        description:
+          type: string
         price:
           type: number
+        currency:
+          type: string
+        category:
+          type: string
         department:
           type: string
-        rating:
-          type: number
+        image:
+          type: string
         stock:
           type: integer
+        rating:
+          type: number
+        brand:
+          type: string
         isActive:
           type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     ProductCreate:
       type: object
@@ -261,56 +1100,204 @@ components:
           type: string
         description:
           type: string
+        currency:
+          type: string
+        category:
+          type: string
+        image:
+          type: string
         stock:
           type: integer
         rating:
           type: number
+        brand:
+          type: string
 
-    Deal:
+    ProductUpdate:
       type: object
       properties:
-        dealId:
-          type: integer
-        productId:
-          type: integer
         title:
           type: string
-        description:
+        sku:
           type: string
         price:
           type: number
         department:
           type: string
+        description:
+          type: string
+        currency:
+          type: string
+        category:
+          type: string
+        image:
+          type: string
+        stock:
+          type: integer
         rating:
           type: number
-        currency:
+        brand:
           type: string
         isActive:
           type: boolean
+
+    ProductResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/Product"
+
+    ProductsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        count:
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        message:
+          type: string
+
+    ProductStatsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            totalProducts:
+              type: integer
+            averagePrice:
+              type: number
+            averageRating:
+              type: number
+            totalStock:
+              type: integer
+            minPrice:
+              type: number
+            maxPrice:
+              type: number
+            departmentCount:
+              type: integer
+            brandCount:
+              type: integer
+            categoryCount:
+              type: integer
+            departments:
+              type: array
+              items:
+                type: string
+            brands:
+              type: array
+              items:
+                type: string
+            categories:
+              type: array
+              items:
+                type: string
+
+    CategoriesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        count:
+          type: integer
+        data:
+          type: array
+          items:
+            type: string
+
+    Deal:
+      type: object
+      properties:
+        dealId:
+          type: string
+          example: "9241"
+        productId:
+          type: string
+        variantSku:
+          type: string
+        department:
+          type: string
+        thumbnail:
+          type: string
+        image:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        shortDescription:
+          type: string
+        price:
+          type: number
+        originalPrice:
+          type: number
+        currency:
+          type: string
+        rating:
+          type: number
+        discount:
+          type: number
+        isActive:
+          type: boolean
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
         lastUpdated:
           type: string
           format: date-time
 
     DealCreate:
       type: object
-      required: [productId, title, description, price, department]
+      required: [productId, title, description, price, department, variantSku]
       properties:
         productId:
-          type: integer
+          type: string
+        variantSku:
+          type: string
+        department:
+          type: string
+        thumbnail:
+          type: string
+        image:
+          type: string
         title:
           type: string
         description:
           type: string
+        shortDescription:
+          type: string
         price:
           type: number
-        department:
-          type: string
-        variantSku:
-          type: string
-        rating:
+        originalPrice:
           type: number
         currency:
           type: string
+        rating:
+          type: number
+        discount:
+          type: number
+        isActive:
+          type: boolean
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
 
     DealUpdate:
       type: object
@@ -323,9 +1310,113 @@ components:
           type: number
         rating:
           type: number
+        department:
+          type: string
+        variantSku:
+          type: string
+        shortDescription:
+          type: string
+        originalPrice:
+          type: number
+        currency:
+          type: string
+        discount:
+          type: number
+        isActive:
+          type: boolean
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
 
-tags:
-  - name: Products
-    description: Product management operations
-  - name: Deals
-    description: Deal management operations
+    DealResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/Deal"
+
+    DealsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        count:
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Deal"
+        message:
+          type: string
+
+    DealStatsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            totalDeals:
+              type: integer
+            averagePrice:
+              type: number
+            averageRating:
+              type: number
+            minPrice:
+              type: number
+            maxPrice:
+              type: number
+            departmentCount:
+              type: integer
+            uniqueProducts:
+              type: integer
+            departments:
+              type: array
+              items:
+                type: string
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+        service:
+          type: string
+        version:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        environment:
+          type: string
+        database:
+          type: object
+          properties:
+            status:
+              type: string
+            provider:
+              type: string
+        platform:
+          type: string
+        features:
+          type: array
+          items:
+            type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Error message
