@@ -12,4 +12,4 @@ public class CartApplication {
 
 }
 
-//deployment test v3.2.0-pipeline-fix
+//deployment test v3.2.0-pipeline
