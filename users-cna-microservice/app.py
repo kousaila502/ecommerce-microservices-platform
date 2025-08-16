@@ -22,6 +22,9 @@ from routers.password_reset import router as password_reset_router
 from routers.email_verification import router as email_verification_router
 from routers.user_validation import router as user_validation_router
 
+#import status router
+from routers.status_router import router as status_router
+
 # Modern lifespan event handler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -176,6 +179,9 @@ app.include_router(user_router, tags=["User Management"])
 app.include_router(password_reset_router, tags=["Password Reset"])
 app.include_router(email_verification_router, tags=["Email Verification"])
 app.include_router(user_validation_router, tags=["User Validation"])
+
+# Include status router
+app.include_router(status_router, tags=["Status"])
 
 # Swagger Documentation Route
 @app.get("/swagger", include_in_schema=False)
