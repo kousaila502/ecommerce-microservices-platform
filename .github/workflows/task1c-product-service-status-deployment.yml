@@ -22,7 +22,7 @@ on:
 env:
   IMAGE_NAME: kousaila/product-service
   SERVICE_PATH: products-cna-microservice
-  HEROKU_APP_NAME: ecommerce-product-service-56575270905a
+  HEROKU_APP_NAME: ecommerce-product-service
   PROMETHEUS_PUSHGATEWAY: https://prometheus-prod-56-prod-us-east-2.grafana.net/api/prom/push
   PIPELINE_ID: ${{ github.run_id }}-${{ github.run_attempt }}
   SERVICE_NAME: "product-service"
@@ -322,8 +322,21 @@ jobs:
           curl https://cli-assets.heroku.com/install.sh | sh
 
       - name: Login to Heroku Container Registry
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
-          echo ${{ secrets.HEROKU_API_KEY }} | docker login --username=_ --password-stdin registry.heroku.com
+          echo "🔐 Testing Heroku authentication methods..."
+          
+          # Test API key
+          echo "API Key length: ${#HEROKU_API_KEY}"
+          
+          # Method 1: Heroku CLI login
+          echo "Trying Heroku CLI login..."
+          heroku container:login
+          
+          # Method 2: Manual Docker login (if CLI fails)
+          echo "Trying manual Docker login..."
+          echo "$HEROKU_API_KEY" | docker login --username=_ --password-stdin registry.heroku.com
 
       - name: Pull and tag for Heroku
         run: |
