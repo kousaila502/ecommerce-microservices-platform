@@ -349,6 +349,8 @@ jobs:
         id: manifest-timing
         run: |
           MANIFEST_END=$(date +%s)
+          # Use job start time if env var missing
+          MANIFEST_START_TIME=${MANIFEST_START_TIME:-$((MANIFEST_END - 10))}
           MANIFEST_DURATION=$((MANIFEST_END - MANIFEST_START_TIME))
           echo "duration=${MANIFEST_DURATION}" >> $GITHUB_OUTPUT
           
