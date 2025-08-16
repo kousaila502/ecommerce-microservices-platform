@@ -89,6 +89,8 @@ function asyncHandler(fn) {
 // ================================
 app.use(require('./routes/record'));
 app.use(require('./routes/deals'));
+// add status endpoint
+app.use(require('./routes/status'));
 
 // GET /categories endpoint
 app.get('/categories', asyncHandler(async (req, res) => {
