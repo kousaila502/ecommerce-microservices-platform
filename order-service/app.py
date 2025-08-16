@@ -6,7 +6,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config.settings import settings
 from database.connection import init_database, close_database
-from routers import orders, admin_orders, health  # Added health import
+from routers import orders, admin_orders, health, status_router  # Added status import
+
+# add status endpoint
+
 
 # Create FastAPI application
 app = FastAPI(
@@ -97,6 +100,8 @@ app.add_middleware(
 app.include_router(orders.router, prefix="/orders", tags=["orders"])
 app.include_router(admin_orders.router, prefix="/admin/orders", tags=["admin"])
 app.include_router(health.router, prefix="/health", tags=["health"])  # Added health router
+
+app.include_router(status_router.router, prefix="/status", tags=["Status"])  # Added status router
 
 
 @app.get("/docs")
