@@ -265,7 +265,8 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=task1c-${{ env.SHORT_SHA }}
+            type=raw,value=latest
+            type=raw,value=v${{ needs.task1c-initialization.outputs.commit-sha }}
 
       - name: Build and push Product Service Docker image
         id: docker-build
@@ -282,7 +283,7 @@ jobs:
         run: |
           DOCKER_END=$(date +%s)
           DOCKER_DURATION=$((DOCKER_END - DOCKER_START_TIME))
-          IMAGE_TAG="task1c-${SHORT_SHA}"
+          IMAGE_TAG="v${{ needs.task1c-initialization.outputs.commit-sha }}"
           echo "duration=${DOCKER_DURATION}" >> $GITHUB_OUTPUT
           echo "image-tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           
@@ -327,8 +328,20 @@ jobs:
       - name: Pull and tag for Heroku
         run: |
           echo "🐳 Preparing image for Heroku deployment..."
-          docker pull ${{ env.IMAGE_NAME }}:${{ needs.task1c-docker-build.outputs.image-tag }}
-          docker tag ${{ env.IMAGE_NAME }}:${{ needs.task1c-docker-build.outputs.image-tag }} registry.heroku.com/${{ env.HEROKU_APP_NAME }}/web
+          echo "IMAGE_NAME: ${{ env.IMAGE_NAME }}"
+          echo "HEROKU_APP_NAME: ${{ env.HEROKU_APP_NAME }}"
+          
+          # Check if image exists locally first
+          if docker image inspect ${{ env.IMAGE_NAME }}:latest >/dev/null 2>&1; then
+            echo "✅ Image exists locally, using it directly"
+          else
+            echo "Image not found locally, pulling from registry..."
+            docker pull ${{ env.IMAGE_NAME }}:latest
+          fi
+          
+          # Tag for Heroku
+          docker tag ${{ env.IMAGE_NAME }}:latest registry.heroku.com/${{ env.HEROKU_APP_NAME }}/web
+          echo "✅ Successfully tagged for Heroku"
 
       - name: Push to Heroku Container Registry
         run: |
