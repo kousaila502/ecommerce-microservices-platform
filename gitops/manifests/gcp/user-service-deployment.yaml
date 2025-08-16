@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: kousaila/user-service:task1a-88f2a62
+          image: kousaila/user-service:
           imagePullPolicy: Always
           env:
             - name: DATABASE_URL
