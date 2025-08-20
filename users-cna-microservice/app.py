@@ -205,7 +205,7 @@ async def health_check():
     return {
         "status": "healthy" if db_health.get("status") == "connected" else "degraded",
         "service": "user-service",
-        "version": "2.5.0-LIVE",
+        "version": "2.6.0-LIVE",
         "timestamp": datetime.utcnow().isoformat(),
         "platform": "GKE Kubernetes",
         "database": {
