@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     print(f"   🏷️  Name: E-Commerce User Service")
     print(f"   📦 Version: 2.5.0-LIVE")
     print(f"   🌐 Platform: GKE Kubernetes")
-    print(f"   🗄️  Database: Neon PostgreSQL")
+    print(f"   🗄️  Database: Internal PostgreSQL")  # <-- UPDATED
     print(f"   📅 Started: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
     
     # Environment Validation
@@ -53,12 +53,12 @@ async def lifespan(app: FastAPI):
     print("\n🗄️  DATABASE CONNECTIVITY:")
     db_health = await check_database_health()
     if db_health.get("status") == "connected":
-        print("   ✅ PostgreSQL (Neon) - Connected")
-        print("   🌐 Provider: Neon")
-        print("   📍 Region: AWS us-east-2")
+        print("   ✅ Internal PostgreSQL - Connected")  # <-- UPDATED
+        print("   🌐 Provider: Internal")  # <-- UPDATED
+        print("   📍 Region: GKE Cluster")  # <-- UPDATED
         print("   🔗 Host: postgres-service.default.svc.cluster.local")
     else:
-        print("   ❌ PostgreSQL (Neon) - Connection Failed")
+        print("   ❌ Internal PostgreSQL - Connection Failed")  # <-- UPDATED
         print(f"   ⚠️  Error: {db_health.get('error', 'Unknown error')}")
     
     # Live System URLs
@@ -209,10 +209,10 @@ async def health_check():
         "timestamp": datetime.utcnow().isoformat(),
         "platform": "GKE Kubernetes",
         "database": {
-            "provider": "Neon PostgreSQL",
+            "provider": "Internal PostgreSQL",  # <-- UPDATED
             "status": db_health.get("status"),
             "host": "postgres-service.default.svc.cluster.local",
-            "platform": "AWS us-east-2"
+            "platform": "GKE Cluster"  # <-- UPDATED
         },
         "features": [
             "authentication",
@@ -246,10 +246,10 @@ async def health_database():
     db_health = await check_database_health()
     
     return {
-        "service": "PostgreSQL Database (Neon)",
+        "service": "Internal PostgreSQL Database",  # <-- UPDATED
         "timestamp": datetime.utcnow().isoformat(),
-        "provider": "Neon",
-        "platform": "AWS us-east-2",
+        "provider": "Internal",  # <-- UPDATED
+        "platform": "GKE Cluster",  # <-- UPDATED
         "host": "postgres-service.default.svc.cluster.local",
         "result": db_health
     }
@@ -262,7 +262,7 @@ async def service_info():
         "service": "user-service",
         "version": "2.5.0-LIVE",
         "platform": "GKE Kubernetes",
-        "database": "Neon PostgreSQL",
+        "database": "Internal PostgreSQL",  # <-- UPDATED
         "timestamp": datetime.utcnow().isoformat(),
         "live_system": {
             "frontend": "https://ecommerce-app-omega-two-64.vercel.app",
