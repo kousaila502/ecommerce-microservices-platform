@@ -72,6 +72,7 @@ async def get_db():
 # Health check function for database
 async def check_database_health():
     """Check database connectivity for health endpoints"""
+    print(f"🔎 Health check using DATABASE_URL: {DATABASE_URL}")  # <-- Add this line
     try:
         async with async_session() as session:
             # Proper connection test with actual query
@@ -84,6 +85,7 @@ async def check_database_health():
             }
     except Exception as e:
         print(f"Database health check failed: {e}")  # Add logging
+        print(f"❌ Tried DATABASE_URL: {DATABASE_URL}")  # <-- Add this line
         return {
             "status": "failed",
             "provider": "PostgreSQL",
