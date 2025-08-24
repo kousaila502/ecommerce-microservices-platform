@@ -16,9 +16,6 @@ RUN pipenv install
 # expose the port that uvicorn will run the app
 EXPOSE 9090
 
-# Copy .env first to bust cache when it changes
-COPY .env .
-
 # copy the rest of the app
 COPY . .
 
