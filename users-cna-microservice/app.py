@@ -56,7 +56,7 @@ async def lifespan(app: FastAPI):
         print("   ✅ PostgreSQL (Neon) - Connected")
         print("   🌐 Provider: Neon")
         print("   📍 Region: AWS us-east-2")
-        print("   🔗 Host: ep-cold-breeze-aedi5hre-pooler.c-2.us-east-2.aws.neon.tech")
+        print("   🔗 Host: postgres-service.default.svc.cluster.local")
     else:
         print("   ❌ PostgreSQL (Neon) - Connection Failed")
         print(f"   ⚠️  Error: {db_health.get('error', 'Unknown error')}")
@@ -211,7 +211,7 @@ async def health_check():
         "database": {
             "provider": "Neon PostgreSQL",
             "status": db_health.get("status"),
-            "host": "ep-cold-breeze-aedi5hre-pooler.c-2.us-east-2.aws.neon.tech",
+            "host": "postgres-service.default.svc.cluster.local",
             "platform": "AWS us-east-2"
         },
         "features": [
@@ -250,7 +250,7 @@ async def health_database():
         "timestamp": datetime.utcnow().isoformat(),
         "provider": "Neon",
         "platform": "AWS us-east-2",
-        "host": "ep-cold-breeze-aedi5hre-pooler.c-2.us-east-2.aws.neon.tech",
+        "host": "postgres-service.default.svc.cluster.local",
         "result": db_health
     }
 

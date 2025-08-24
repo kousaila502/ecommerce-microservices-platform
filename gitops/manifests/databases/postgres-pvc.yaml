@@ -1,0 +1,12 @@
+# postgres-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi   # tu peux mettre 5Gi ou plus
+  storageClassName: standard  # Standard HDD (moins cher que SSD)
