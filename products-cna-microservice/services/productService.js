@@ -16,7 +16,7 @@ class ProductService {
   }
 
   // Get all categories
-  async getAllCategories() {
+  static async getAllCategories() {
     const Product = require('../models/product');
     const categories = await Product.distinct('category', { isActive: true });
     return categories.filter(cat => cat); // Remove null/undefined categories
