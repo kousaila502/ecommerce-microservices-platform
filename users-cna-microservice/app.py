@@ -323,7 +323,7 @@ async def root():
     return {
         "message": "🚀 E-Commerce User Service - Live System Integration",
         "service": "user-service",
-        "version": "2.5.0-LIVE",
+        "version": "2.6.0-LIVE",
         "platform": "GKE Kubernetes",
         "database": "Neon PostgreSQL",
         "status": "operational",
