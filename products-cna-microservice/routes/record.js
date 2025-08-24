@@ -51,6 +51,24 @@ recordRoutes.route('/products').get(async function (req, res) {
   }
 });
 
+
+// Get all categories
+recordRoutes.route('/categories').get(async function (req, res) {
+  try {
+    const categories = await ProductService.getAllCategories();
+    res.json({
+      success: true,
+      count: categories.length,
+      data: categories
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // ================================
 // SPECIFIC ROUTES (MUST COME BEFORE :id ROUTE)
 // ================================
