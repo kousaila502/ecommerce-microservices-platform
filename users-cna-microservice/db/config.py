@@ -74,16 +74,18 @@ async def check_database_health():
     """Check database connectivity for health endpoints"""
     try:
         async with async_session() as session:
-            # Simple connection test - just open and close session
-            await session.connection()
+            # Proper connection test with actual query
+            result = await session.execute(text("SELECT 1"))
+            await session.commit()
             return {
                 "status": "connected",
-                "provider": "Neon PostgreSQL",
-                "platform": "AWS us-east-2"
+                "provider": "PostgreSQL",  # Updated
+                "host": DATABASE_URL.split('@')[1].split('/')[0] if '@' in DATABASE_URL else "unknown"
             }
     except Exception as e:
+        print(f"Database health check failed: {e}")  # Add logging
         return {
             "status": "failed",
-            "provider": "Neon PostgreSQL",
+            "provider": "PostgreSQL",
             "error": str(e)
         }
