@@ -144,9 +144,15 @@ const AdminOrderManagement: React.FC = () => {
   const handleStatusUpdate = async (orderId: number, newStatus: string) => {
     if (!token) return;
 
+    // DEBUG: Log the URL being constructed
+    const updateUrl = `${rawOrdersAdminUrl}/${orderId}/status`;
+    console.log('🔍 DEBUG - Update URL:', updateUrl);
+    console.log('🔍 DEBUG - rawOrdersAdminUrl:', rawOrdersAdminUrl);
+    console.log('🔍 DEBUG - orderId:', orderId);
+    console.log('🔍 DEBUG - newStatus:', newStatus);
+
     try {
-      // TODO: Replace with your actual API call
-      const response = await fetch(`${rawOrdersAdminUrl}/${orderId}`, {
+      const response = await fetch(updateUrl, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -155,7 +161,13 @@ const AdminOrderManagement: React.FC = () => {
         body: JSON.stringify({ status: newStatus }),
       });
 
+      console.log('🔍 DEBUG - Response status:', response.status);
+      console.log('🔍 DEBUG - Response headers:', response.headers);
+
       if (response.ok) {
+        const responseData = await response.json();
+        console.log('🔍 DEBUG - Success response:', responseData);
+
         setOrders(prev =>
           prev.map(order =>
             order.id === orderId ? { ...order, status: newStatus } : order
@@ -167,12 +179,17 @@ const AdminOrderManagement: React.FC = () => {
           severity: 'success'
         });
       } else {
-        throw new Error('Failed to update order status');
+        const errorText = await response.text();
+        console.error('🔍 DEBUG - Error response:', errorText);
+        throw new Error(`Failed to update order status: ${response.status} - ${errorText}`);
       }
     } catch (err) {
+      console.error('🔍 DEBUG - Catch error:', err);
       setSnackbar({
         open: true,
-        message: 'Failed to update order status',
+        message: `Failed to update order status: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
         severity: 'error'
       });
     }

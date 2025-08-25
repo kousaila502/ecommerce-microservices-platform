@@ -17,7 +17,10 @@ import {
   HourglassBottom as HourglassBottomIcon,
   AttachMoney as AttachMoneyIcon,
   LocalShipping as LocalShippingIcon,
-  Receipt as ReceiptIcon
+  Receipt as ReceiptIcon,
+  ArrowBack as ArrowBackIcon,
+  Home as HomeIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -189,7 +192,19 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>Admin Dashboard</Typography>
+      {/* Header with Return to TechMart button */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Typography variant="h4" gutterBottom>Admin Dashboard</Typography>
+        <Button
+          variant="outlined"
+          color="primary"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/')}
+          sx={{ ml: 2, boxShadow: 1, transition: 'background 0.2s, box-shadow 0.2s', '&:hover': { backgroundColor: 'primary.light', boxShadow: 3 } }}
+        >
+          Return to TechMart
+        </Button>
+      </Box>
       <Typography variant="body1" color="text.secondary" gutterBottom>
         Overview of users and orders on your platform
       </Typography>
@@ -506,6 +521,59 @@ const AdminDashboard: React.FC = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
+              {/* Navigation Section */}
+              <Typography variant="h6" gutterBottom>Navigation</Typography>
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item xs={12}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<ShoppingCartIcon />}
+                    onClick={() => navigate('/admin/orders')}
+                    sx={{ textAlign: 'left' }}
+                  >
+                    Order Management
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<PeopleIcon />}
+                    onClick={() => navigate('/admin/users')}
+                    sx={{ textAlign: 'left' }}
+                  >
+                    User Management
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<TrendingUpIcon />}
+                    onClick={() => navigate('/admin/analytics')}
+                    sx={{ textAlign: 'left' }}
+                  >
+                    Analytics Dashboard
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<SettingsIcon />}
+                    onClick={() => { }}
+                    sx={{ textAlign: 'left' }}
+                  >
+                    Settings
+                  </Button>
+                </Grid>
+              </Grid>
+              {/* Quick Actions Section (existing) */}
               <Typography variant="h6" gutterBottom>Quick Actions</Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
