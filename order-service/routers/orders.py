@@ -70,10 +70,7 @@ async def get_my_orders(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Get current user's orders"""
-    order_service = OrderService(db)
-    orders = await order_service.get_user_orders(current_user.id, page, size)
-    return orders
+    # let's simulate syntax error
 
 @router.get(
     "/{order_id}",
