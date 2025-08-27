@@ -34,4 +34,11 @@ spec:
       - ApplyOutOfSyncOnly=true
       - RespectIgnoreDifferences=true
       - Replace=true
+      - ServerSideApply=true  # Add this
+    retry:  # Add retry policy
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m0s
   revisionHistoryLimit: 10
