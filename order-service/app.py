@@ -145,7 +145,7 @@ async def health_check():
     return {
         "status": "healthy", 
         "service": "order-service",
-        "version": "2.5.0",
+        "version": "2.6.0",
         "cors_enabled": True,
         "timestamp": "2025-08-11T17:45:00Z",
         "environment": settings.environment,
