@@ -206,11 +206,12 @@ jobs:
           echo ✅ Python syntax validation passed
 
           echo ▶️ Module Import Tests  
-          python -c "try: import main; print('Main module imported successfully'); except Exception as e: print('Import failed:', str(e)); exit(1)"
+          python -c "import main" 2>nul
           if errorlevel 1 (
             echo Import validation failed - Pipeline will fail
             exit /b 1
           )
+          echo Main module imported successfully
 
           echo ▶️ Unit Tests (6 seconds)
           ping -n 7 127.0.0.1 > nul
