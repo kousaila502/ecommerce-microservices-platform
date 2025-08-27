@@ -142,7 +142,7 @@ jobs:
           GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_order_source_complexity_score" "${{ steps.analysis.outputs.complexity }}"
           echo "========================================"
 
- # =============================================================================
+# =============================================================================
   # BUILD & TEST STAGE
   # =============================================================================
   gitops-build-and-test:
@@ -206,9 +206,9 @@ jobs:
           echo ✅ Python syntax validation passed
 
           echo ▶️ Module Import Tests  
-          python -c "try: import main; print('✅ Main module imported successfully'); except Exception as e: print('❌ Import failed:', e); exit(1)"
+          python -c "try: import main; print('Main module imported successfully'); except Exception as e: print('Import failed:', str(e)); exit(1)"
           if errorlevel 1 (
-            echo ❌ Import validation failed - Pipeline will fail
+            echo Import validation failed - Pipeline will fail
             exit /b 1
           )
 
@@ -246,6 +246,7 @@ jobs:
           GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_order_unit_tests_total" "38"
           GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_order_integration_tests_total" "24"
           echo "========================================"
+          
   # =============================================================================
   # DOCKER BUILD
   # =============================================================================
