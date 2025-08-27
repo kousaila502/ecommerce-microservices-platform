@@ -142,7 +142,7 @@ jobs:
           GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_order_source_complexity_score" "${{ steps.analysis.outputs.complexity }}"
           echo "========================================"
 
-  # =============================================================================
+ # =============================================================================
   # BUILD & TEST STAGE
   # =============================================================================
   gitops-build-and-test:
@@ -194,6 +194,24 @@ jobs:
           cd ${{ env.SERVICE_PATH }}
           echo 🧪 RUNNING ORDER SERVICE GITOPS TEST SUITE...
 
+          echo ▶️ Python Syntax Validation
+          for %%f in (*.py) do (
+            echo Checking syntax for %%f...
+            python -m py_compile "%%f"
+            if errorlevel 1 (
+              echo ❌ SYNTAX ERROR DETECTED in %%f - Pipeline will fail
+              exit /b 1
+            )
+          )
+          echo ✅ Python syntax validation passed
+
+          echo ▶️ Module Import Tests  
+          python -c "try: import main; print('✅ Main module imported successfully'); except Exception as e: print('❌ Import failed:', e); exit(1)"
+          if errorlevel 1 (
+            echo ❌ Import validation failed - Pipeline will fail
+            exit /b 1
+          )
+
           echo ▶️ Unit Tests (6 seconds)
           ping -n 7 127.0.0.1 > nul
           echo ✅ Unit tests passed (38/38)
@@ -228,7 +246,6 @@ jobs:
           GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_order_unit_tests_total" "38"
           GRAFANA_USER="${{ secrets.GRAFANA_CLOUD_USER }}" GRAFANA_KEY="${{ secrets.GRAFANA_CLOUD_API_KEY }}" bash .github/scripts/push_metric.sh "gitops_order_integration_tests_total" "24"
           echo "========================================"
-
   # =============================================================================
   # DOCKER BUILD
   # =============================================================================

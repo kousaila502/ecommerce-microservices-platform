@@ -1,4 +1,4 @@
-// src/pages/Orders/OrdersPage.tsx (FIXED VERSION)
+// src/pages/Orders/OrdersPage.tsx - Simple update for Coming Soon
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserOrders, Order } from '../../api/order';
@@ -34,6 +34,7 @@ import {
  HourglassBottom as PendingIcon,
  Refresh as RefreshIcon,
  ShoppingBag as EmptyIcon,
+ Construction as ConstructionIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -46,6 +47,8 @@ const OrdersPage = () => {
  const [error, setError] = useState('');
  const [searchTerm, setSearchTerm] = useState('');
  const [statusFilter, setStatusFilter] = useState('all');
+ // NEW: Add state for coming soon
+ const [showComingSoon, setShowComingSoon] = useState(false);
 
  useEffect(() => {
    fetchOrders();
@@ -60,25 +63,26 @@ const OrdersPage = () => {
 
    setLoading(true);
    setError('');
+   setShowComingSoon(false); // Reset coming soon state
+   
    try {
      const response = await getUserOrders(token);
-     // ✅ FIXED: Add array check
      if (response && Array.isArray(response)) {
        setOrders(response);
      } else {
-       setOrders([]); // ✅ Set empty array instead of leaving undefined
-       setError("No orders found.");
+       setOrders([]);
      }
    } catch (err) {
-     setError("Failed to load orders.");
-     setOrders([]); // ✅ Ensure orders is always an array
+     console.log('Orders fetch error:', err);
+     // Show coming soon instead of error
+     setShowComingSoon(true);
+     setOrders([]);
    } finally {
      setLoading(false);
    }
  };
 
  const filterOrders = () => {
-   // ✅ FIXED: Add safety check before spreading (this was line 78 causing the error)
    if (!Array.isArray(orders)) {
      setFilteredOrders([]);
      return;
@@ -86,7 +90,6 @@ const OrdersPage = () => {
    
    let filtered = [...orders];
 
-   // Filter by search term
    if (searchTerm) {
      filtered = filtered.filter(order =>
        order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -94,7 +97,6 @@ const OrdersPage = () => {
      );
    }
 
-   // Filter by status
    if (statusFilter !== 'all') {
      filtered = filtered.filter(order => order.status === statusFilter);
    }
@@ -154,6 +156,44 @@ const OrdersPage = () => {
    );
  }
 
+ // NEW: Show Coming Soon page
+ if (showComingSoon) {
+   return (
+     <Container maxWidth="lg" sx={{ py: 4 }}>
+       <Fade in timeout={800}>
+         <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3 }}>
+           <ConstructionIcon sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
+           <Typography variant="h4" gutterBottom fontWeight="bold" color="primary.main">
+             Coming Soon!
+           </Typography>
+           <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
+             Order History Feature
+           </Typography>
+           <Typography variant="body1" color="text.disabled" sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}>
+             We're working on bringing you a comprehensive order tracking experience. 
+             You'll soon be able to view all your orders and track their status.
+           </Typography>
+           <Button
+             variant="contained"
+             onClick={() => navigate('/')}
+             size="large"
+             sx={{ mr: 2 }}
+           >
+             Continue Shopping
+           </Button>
+           <Button
+             variant="outlined"
+             onClick={fetchOrders}
+             startIcon={<RefreshIcon />}
+           >
+             Check Again
+           </Button>
+         </Paper>
+       </Fade>
+     </Container>
+   );
+ }
+
  if (error) {
    return (
      <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -200,7 +240,6 @@ const OrdersPage = () => {
    <Container maxWidth="lg" sx={{ py: 4 }}>
      <Fade in timeout={600}>
        <Box>
-         {/* Header */}
          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
            <ReceiptIcon sx={{ fontSize: 32, mr: 2, color: 'primary.main' }} />
            <Typography variant="h4" fontWeight="bold">
@@ -213,7 +252,6 @@ const OrdersPage = () => {
            />
          </Box>
 
-         {/* Filters */}
          <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
            <Grid container spacing={3} alignItems="center">
              <Grid item xs={12} md={6}>
@@ -273,14 +311,11 @@ const OrdersPage = () => {
            </Grid>
          </Paper>
 
-         {/* Results Summary */}
          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
            Showing {filteredOrders.length} of {orders.length} orders
          </Typography>
 
-         {/* Orders List */}
          <Grid container spacing={2}>
-           {/* ✅ FIXED: Added safety check before mapping */}
            {Array.isArray(filteredOrders) && filteredOrders.map((order, index) => (
              <Grid item xs={12} key={order.id}>
                <Slide direction="up" in timeout={400 + index * 100}>
@@ -297,14 +332,11 @@ const OrdersPage = () => {
                    <CardActionArea onClick={() => navigate(`/orders/${order.id}`)}>
                      <CardContent sx={{ p: 3 }}>
                        <Grid container spacing={3} alignItems="center">
-                         {/* Order Icon */}
                          <Grid item xs={12} sm={1}>
                            <Avatar sx={{ bgcolor: 'primary.light' }}>
                              {getStatusIcon(order.status)}
                            </Avatar>
                          </Grid>
-
-                         {/* Order Info */}
                          <Grid item xs={12} sm={5}>
                            <Typography variant="h6" fontWeight="bold" gutterBottom>
                              Order #{order.order_number}
@@ -313,8 +345,6 @@ const OrdersPage = () => {
                              Placed on {formatDate(order.created_at)}
                            </Typography>
                          </Grid>
-
-                         {/* Status */}
                          <Grid item xs={12} sm={2}>
                            <Chip
                              label={order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
@@ -323,8 +353,6 @@ const OrdersPage = () => {
                              sx={{ fontWeight: 'medium' }}
                            />
                          </Grid>
-
-                         {/* Payment */}
                          <Grid item xs={12} sm={2}>
                            <Typography variant="body2" color="text.secondary">
                              Payment
@@ -336,8 +364,6 @@ const OrdersPage = () => {
                              size="small"
                            />
                          </Grid>
-
-                         {/* Total */}
                          <Grid item xs={12} sm={2}>
                            <Typography variant="body2" color="text.secondary">
                              Total
@@ -355,7 +381,6 @@ const OrdersPage = () => {
            ))}
          </Grid>
 
-         {/* No Results */}
          {filteredOrders.length === 0 && orders.length > 0 && (
            <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
              <SearchIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />

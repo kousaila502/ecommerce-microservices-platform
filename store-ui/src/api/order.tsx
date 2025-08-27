@@ -1,9 +1,9 @@
-import axiosClient, { apiUrl, rawOrdersUrl, rawOrdersAdminUrl  } from "./config"
+import axiosClient, { apiUrl, rawOrdersUrl, rawOrdersAdminUrl } from "./config"
 
 // ✅ ADDED: Enums to match backend exactly
 export enum OrderStatus {
     PENDING = "pending",
-    CONFIRMED = "confirmed", 
+    CONFIRMED = "confirmed",
     PROCESSING = "processing",
     SHIPPED = "shipped",
     DELIVERED = "delivered",
@@ -14,7 +14,7 @@ export enum OrderStatus {
 export enum PaymentStatus {
     PENDING = "pending",
     PAID = "paid",
-    FAILED = "failed", 
+    FAILED = "failed",
     REFUNDED = "refunded"
 }
 
@@ -31,21 +31,21 @@ export interface ShippingAddress {
 export interface OrderItem {
     id: number;
     order_id?: number; // Foreign key (may not always be included in responses)
-    
+
     // Product details (all required in backend)
     product_id: number;
     product_name: string;
     product_sku?: string; // Optional in backend
     product_image?: string; // Optional in backend
-    
+
     // Pricing details (required in backend, API returns as strings)
     unit_price: string | number;
     quantity: number;
     total_price: string | number;
-    
+
     // Product attributes (optional in backend)
     product_attributes?: string;
-    
+
     // Timestamps (required in backend)
     created_at?: string; // May not always be included in responses
     updated_at?: string; // May not always be included in responses
@@ -55,51 +55,51 @@ export interface OrderItem {
 export interface Order {
     id: number;
     user_id: number;
-    
+
     // Order details (all required in backend)
     order_number: string;
     status: string; // Enum: pending, confirmed, processing, shipped, delivered, cancelled, refunded
     payment_status: string; // Enum: pending, paid, failed, refunded
-    
+
     // Financial details (all required in backend, API returns as strings)
     subtotal: string | number;
     tax_amount: string | number;
     shipping_amount: string | number;
     discount_amount: string | number;
     total_amount: string | number;
-    
+
     // Shipping details (all required in backend)
     shipping_address: string;
     shipping_city: string;
     shipping_state: string;
     shipping_postal_code: string;
     shipping_country: string;
-    
+
     // Billing details (optional in backend)
     billing_address?: string;
     billing_city?: string;
     billing_state?: string;
     billing_postal_code?: string;
     billing_country?: string;
-    
+
     // Contact details
     customer_email: string; // Required in backend
     customer_phone?: string; // Optional in backend
-    
+
     // Order tracking (optional in backend)
     notes?: string;
     tracking_number?: string;
-    
+
     // Timestamps (required in backend)
     created_at: string;
     updated_at: string;
-    
+
     // Optional timestamps (set when status changes)
     confirmed_at?: string;
     shipped_at?: string;
     delivered_at?: string;
     cancelled_at?: string;
-    
+
     // Relationships (always present)
     order_items: OrderItem[];
 }
@@ -132,9 +132,8 @@ export const createOrder = async (
 };
 
 // ✅ FIXED: Get user's orders with proper URL construction
-export const getUserOrders = async (token: string, page: number = 1, size: number = 10): Promise<Order[] | null> => {
+export const getUserOrders = async (token: string, page: number = 1, size: number = 10): Promise<Order[]> => {
     try {
-        // ✅ FIXED: Add 'orders/' with trailing slash for query params
         const response = await axiosClient.get(`${rawOrdersUrl}/?page=${page}&size=${size}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
@@ -149,7 +148,7 @@ export const getUserOrders = async (token: string, page: number = 1, size: numbe
         }
     } catch (error: any) {
         console.error('Error fetching user orders:', error.response?.data || error.message);
-        return [];
+        throw error; // ← ADD THIS LINE - throw the error instead of returning []
     }
 };
 
@@ -174,9 +173,9 @@ export const getAllOrders = async (token: string, page: number = 1, size: number
         const response = await axiosClient.get(`${rawOrdersAdminUrl}/?page=${page}&size=${size}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         console.log('All orders response:', response.data);
-        
+
         if (Array.isArray(response.data)) {
             return response.data;
         } else {
