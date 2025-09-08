@@ -15,7 +15,7 @@ spec:
     rollingUpdate:
       maxUnavailable: 0 # Keep old pod running during update
       maxSurge: 1 # Allow 1 new pod to be created
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: user-service
