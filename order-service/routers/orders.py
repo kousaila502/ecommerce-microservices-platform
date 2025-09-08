@@ -53,6 +53,17 @@ async def create_order_simple(
             detail="Failed to create order"
         )
 
+@router.get("/", response_model=List[OrderSummary])
+async def get_user_orders(
+    page: int = 1,
+    size: int = 10,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get current user's orders"""
+    order_service = OrderService(db)
+    orders = await order_service.get_user_orders(current_user.id, page, size)
+    return orders
 
 @router.get(
     "/{order_id}",
