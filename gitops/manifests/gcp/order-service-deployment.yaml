@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: kousaila/order-service:gitops-6e01664
+          image: kousaila/order-service:gitops-46ff262
           imagePullPolicy: Always
           env:
             # 🔧 CRITICAL FIX: Updated to correct database with SSL
