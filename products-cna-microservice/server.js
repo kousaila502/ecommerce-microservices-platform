@@ -115,7 +115,7 @@ app.get('/health', asyncHandler(async (req, res) => {
   res.status(200).json({
     status: dbStatus === 'connected' ? 'healthy' : 'unhealthy',
     service: 'product-service',
-    version: '1.1.0',
+    version: '1.0',
     environment: NODE_ENV,
     timestamp: new Date().toISOString(),
     database: {

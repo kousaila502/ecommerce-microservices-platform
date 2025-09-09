@@ -56,7 +56,7 @@ public class HealthCheckController {
         health.put("status", "UP");
         health.put("service", "Cart Service");
         health.put("timestamp", LocalDateTime.now());
-        health.put("version", "3.0.0");
+        health.put("version", "1.0");
         
         return Mono.just(ResponseEntity.ok(health));
     }
