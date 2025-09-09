@@ -53,30 +53,7 @@ async def create_order_simple(
             detail="Failed to create order"
         )
 
-@router.get(
-    "/",
-    response_model=List[OrderSummary],
-    summary="List orders",
-    description="Admins see all orders; regular users see only their own.",
-    tags=["orders"]
-)
-async def list_orders(
-    page: int = Query(1, ge=1),
-    size: int = Query(10, ge=1, le=100),
-    status: Optional[str] = Query(None, description="Filter by order status"),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    service = OrderService(db)
 
-    if getattr(current_user, "is_admin", False):
-        # expects: async def get_all_orders(page:int, size:int, status:Optional[str]=None)
-        orders = await service.get_all_orders(page=page, size=size, status=status)
-    else:
-        # expects: async def get_user_orders(user_id:int, page:int, size:int, status:Optional[str]=None)
-        orders = await service.get_user_orders(user_id=current_user.id, page=page, size=size, status=status)
-
-    return orders
 
 @router.get(
     "/{order_id}",
